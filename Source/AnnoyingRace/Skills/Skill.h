@@ -14,7 +14,18 @@ class ANNOYINGRACE_API USkill : public UObject
 public:
 	USkill();
 
-	void PushSkillButton();
+	void PushSkillButton(class PlayableCharacter* _PC) {}
+
+	void ReleaseSkillButton(class PlayableCharacter* _PC) {}
+
+protected:
+	virtual void UseSkill(class PlayableCharacter* _PC) {}
+
+	bool CheckConditions() const;
+
+protected:
+	UPROPERTY(EditDefaultsOnly)
+		TSoftObjectPtr<class UAnimMontage> Animation_;
 
 private:
 	UPROPERTY(EditDefaultsOnly)
@@ -22,20 +33,8 @@ private:
 
 	//if Count is Inf, Set -1
 	UPROPERTY(EditDefaultsOnly)
-		int Count_;
+		int RemainingUses_;
 
-	UPROPERTY(EditDefaultsOnly)
-		TSoftObjectPtr<class UAnimMontage> Animation_;
-/*	//Push Skill Button
-	void Skill(class APlayableCharacter* _Caster);
-
-protected:
-	UFUNCTION(BlueprintImplementableEvent, Category = "Skill")
-		bool IsSkillReady();
-
-	UFUNCTION(BlueprintNativeEvent, Category = "Skill")
-		void ActivateSkill(APlayableCharacter* _Caster);
-	virtual void ActivateSkill_Implementation(APlayableCharacter* _Caster);
-	*/
+	TArray<TSharedPtr<class IICondition>> Conditions_;
 };
 
