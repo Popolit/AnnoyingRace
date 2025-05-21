@@ -2,10 +2,10 @@
 
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Components/StateComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "AnnoyingRace/Skills/Skill.h"
 
 
 APlayableCharacter::APlayableCharacter()
@@ -41,21 +41,26 @@ void APlayableCharacter::SetupPlayerInputComponent(UInputComponent* _PlayerInput
 			}
 		}
 
-
-		IC->BindAction(IA_Move_, ETriggerEvent::Triggered, this, &APlayableCharacter::Move);
 		if (ensureMsgf(IA_Move_, TEXT("%s's IA_Move was nullptr"), *GetName()))
 		{
-			IC->BindAction(IA_Move_, ETriggerEvent::Triggered, this, &APlayableCharacter::Move);
+			IC->BindAction(IA_Move_, ETriggerEvent::Triggered, StateComponent_.Get(), &UStateComponent::Move);
 		}
 		if (ensureMsgf(IA_Look_, TEXT("%s's IA_Look was nullptr"), *GetName()))
 		{
-			IC->BindAction(IA_Look_, ETriggerEvent::Triggered, this, &APlayableCharacter::Look);
+			IC->BindAction(IA_Look_, ETriggerEvent::Triggered, StateComponent_.Get(), &UStateComponent::Look);
 		}
 		if (ensureMsgf(IA_UseSkill_, TEXT("%s's IA_UseSkill was nullptr"), *GetName()))
 		{
-			IC->BindAction(IA_UseSkill_, ETriggerEvent::Triggered, this, &APlayableCharacter::UseSkill);
+			IC->BindAction(IA_UseSkill_, ETriggerEvent::Triggered, StateComponent_.Get(), &UStateComponent::UseSkill);
 		}
 	}
+}
+
+void APlayableCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	StateComponent_->BeginPlay();
 }
 
 void APlayableCharacter::CreateAllComponents()
@@ -65,31 +70,6 @@ void APlayableCharacter::CreateAllComponents()
 
 	CameraComponent_ = CreateDefaultSubobject<UCameraComponent>("Camera");
 	CameraComponent_->SetupAttachment(SpringArmComponent_.Get());
+
+	StateComponent_ = CreateDefaultSubobject<UStateComponent>("State");
 }
-
-void APlayableCharacter::Move(const FInputActionInstance& _Instance)
-{
-	const FVector2D MovingFactor = _Instance.GetValue().Get<FVector2D>();
-	FVector Direction = FVector(MovingFactor.X, MovingFactor.Y, 0.0f);
-
-	const FRotator CharacterRotation = GetControlRotation();
-	Direction = CharacterRotation.RotateVector(Direction);
-
-	AddMovementInput(Direction.GetSafeNormal2D());
-}
-
-void APlayableCharacter::Look(const FInputActionInstance& _Instance)
-{
-	const FVector2D LookingFactor = _Instance.GetValue().Get<FVector2D>();
-	AddControllerYawInput(LookingFactor.X);
-	AddControllerPitchInput(LookingFactor.Y);
-}
-
-void APlayableCharacter::UseSkill(const FInputActionInstance& _Instance)
-{
-	if (false == Skill_.IsNull())
-	{
-		//Skill_->Skill(this);
-	}
-}
-

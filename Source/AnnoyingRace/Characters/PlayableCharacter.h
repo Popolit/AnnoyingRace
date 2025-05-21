@@ -12,15 +12,11 @@ class ANNOYINGRACE_API APlayableCharacter : public ACharacter
 public:
 	APlayableCharacter();
 	virtual void SetupPlayerInputComponent(UInputComponent* _PlayerInputComponent) override;
+	virtual void BeginPlay() override;
 
 private:
 	void CreateAllComponents();
 
-private:
-	//Enhanced Input Actions;
-	void Move(const struct FInputActionInstance& _Instance);
-	void Look(const struct FInputActionInstance& _Instance);
-	void UseSkill(const struct FInputActionInstance& _Instance);
 
 	//Components
 private:
@@ -28,6 +24,8 @@ private:
 		TObjectPtr<class USpringArmComponent> SpringArmComponent_;
 	UPROPERTY(VisibleDefaultsOnly)
 		TObjectPtr<class UCameraComponent> CameraComponent_;
+	UPROPERTY(VisibleDefaultsOnly)
+		TObjectPtr<class UStateComponent> StateComponent_;
 
 	//Inputs
 private:
