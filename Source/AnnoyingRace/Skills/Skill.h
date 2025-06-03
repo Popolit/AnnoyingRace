@@ -6,7 +6,7 @@
 /**
  * Skills UObject
  */
-UCLASS(Blueprintable, HideDropdown)
+UCLASS(Abstract, NotBlueprintable, HideDropdown)
 class ANNOYINGRACE_API USkill : public UObject
 {
 	GENERATED_BODY()
@@ -14,18 +14,28 @@ class ANNOYINGRACE_API USkill : public UObject
 public:
 	USkill();
 
-	void PushSkillButton(class PlayableCharacter* _PC) {}
-
-	void ReleaseSkillButton(class PlayableCharacter* _PC) {}
+	//NewObject<>(SkillTrigger)를 해 줄 것.
+	//자식의 Initialize가 끝난 후 Super()를 호출할 것. 
+	virtual void Initialize(ACharacter* _Character);
 
 protected:
-	virtual void UseSkill(class PlayableCharacter* _PC) {}
+	virtual void TryTriggerSkill(ACharacter* _Character);
 
-	bool CheckConditions() const;
+	bool CheckConditions(ACharacter* _Character) const;
+
+	virtual void TriggerSkill(ACharacter* _Character) PURE_VIRTUAL(...)
 
 protected:
 	UPROPERTY(EditDefaultsOnly)
-		TSoftObjectPtr<class UAnimMontage> Animation_;
+		TObjectPtr<class UAnimMontage> Animation_;
+
+	//Skill을 발동시키는 조건
+	UPROPERTY()
+		TScriptInterface<class IITrigger> SkillTrigger_;
+
+	//Skill 발동에 필요한 조건들
+	UPROPERTY()
+		TArray<TObjectPtr<class IICondition>> Conditions_;
 
 private:
 	UPROPERTY(EditDefaultsOnly)
@@ -34,7 +44,5 @@ private:
 	//if Count is Inf, Set -1
 	UPROPERTY(EditDefaultsOnly)
 		int RemainingUses_;
-
-	TArray<TSharedPtr<class IICondition>> Conditions_;
 };
 

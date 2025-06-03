@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Skills/IConditionContext.h"
 #include "StateComponent.generated.h"
 
 UENUM(BlueprintType)
@@ -24,15 +25,18 @@ class ANNOYINGRACE_API UStateComponent : public UActorComponent
 public:	
 	UStateComponent();
 
-	void BeginPlay() override;
+	virtual void BeginPlay() override;
+
+	bool CheckCurrentState(EState _State);
 
 	void SetState(EState _NewState);
+
 
 public:
 	//Enhanced Input Actions;
 	void Move(const struct FInputActionInstance& _Instance);
 	void Look(const struct FInputActionInstance& _Instance);
-	void UseSkill(const struct FInputActionInstance& _Instance);
+	void SkillButtonPushed(const struct FInputActionInstance& _Instance);
 
 
 private:

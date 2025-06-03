@@ -11,8 +11,8 @@ class ANNOYINGRACE_API APlayableCharacter : public ACharacter
 
 public:
 	APlayableCharacter();
+
 	virtual void SetupPlayerInputComponent(UInputComponent* _PlayerInputComponent) override;
-	virtual void BeginPlay() override;
 
 private:
 	void CreateAllComponents();
@@ -26,6 +26,8 @@ private:
 		TObjectPtr<class UCameraComponent> CameraComponent_;
 	UPROPERTY(VisibleDefaultsOnly)
 		TObjectPtr<class UStateComponent> StateComponent_;
+	UPROPERTY(VisibleDefaultsOnly)
+		TObjectPtr<class USkillComponent> SkillComponent_;
 
 	//Inputs
 private:
@@ -37,8 +39,4 @@ private:
 		TObjectPtr<class UInputAction> IA_Look_;
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 		TObjectPtr<class UInputAction> IA_UseSkill_;
-
-private:
-	UPROPERTY(EditDefaultsOnly, Category = Skill)
-		TObjectPtr<class USkill> Skill_;
 };

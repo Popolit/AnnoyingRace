@@ -6,6 +6,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Components/SkillComponent.h"
 
 
 APlayableCharacter::APlayableCharacter()
@@ -51,17 +52,11 @@ void APlayableCharacter::SetupPlayerInputComponent(UInputComponent* _PlayerInput
 		}
 		if (ensureMsgf(IA_UseSkill_, TEXT("%s's IA_UseSkill was nullptr"), *GetName()))
 		{
-			IC->BindAction(IA_UseSkill_, ETriggerEvent::Triggered, StateComponent_.Get(), &UStateComponent::UseSkill);
+			IC->BindAction(IA_UseSkill_, ETriggerEvent::Triggered, StateComponent_.Get(), &UStateComponent::SkillButtonPushed);
 		}
 	}
 }
 
-void APlayableCharacter::BeginPlay()
-{
-	Super::BeginPlay();
-
-	StateComponent_->BeginPlay();
-}
 
 void APlayableCharacter::CreateAllComponents()
 {
@@ -72,4 +67,5 @@ void APlayableCharacter::CreateAllComponents()
 	CameraComponent_->SetupAttachment(SpringArmComponent_.Get());
 
 	StateComponent_ = CreateDefaultSubobject<UStateComponent>("State");
+	SkillComponent_ = CreateDefaultSubobject<USkillComponent>("Skill");
 }

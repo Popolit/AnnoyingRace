@@ -27,6 +27,6 @@ void UState_Hit::Look(const FInputActionInstance& _Instance, ACharacter* _Charac
 	}
 }
 
-void UState_Hit::UseSkill(const FInputActionInstance& _Instance, ACharacter* _Character)
+void UState_Hit::SkillButtonPushed(const FInputActionInstance& _Instance, ACharacter* _Character)
 {
 }

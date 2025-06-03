@@ -1,5 +1,8 @@
 #include "Skill.h"
+
 #include "ICondition.h"
+#include "ITrigger.h"
+#include "GameFramework/Character.h"
 
 USkill::USkill()
 {
@@ -7,8 +10,25 @@ USkill::USkill()
 	RemainingUses_ = 0;
 }
 
+void USkill::Initialize(ACharacter* _Character)
+{
+	IITrigger* Trigger = SkillTrigger_.GetInterface();
+	if (Trigger)
+	{
+		Trigger->Bind(_Character, [this](ACharacter* _Character)
+			{ this->TryTriggerSkill(_Character); });
+	}
+}
 
-bool USkill::CheckConditions() const
+void USkill::TryTriggerSkill(ACharacter* _Character)
+{
+	if(CheckConditions(_Character))
+	{
+		TriggerSkill(_Character);
+	}
+}
+
+bool USkill::CheckConditions(ACharacter* _Character) const
 {
 	//TODO : 어떤 사유로 스킬을 사용할 수 없음을 안내
 	if(RemainingUses_ == 0)
@@ -16,9 +36,9 @@ bool USkill::CheckConditions() const
 		return false;
 	}
 
-	for(const TSharedPtr<IICondition>& Condition : Conditions_)
+	for(const TObjectPtr<IICondition>& Condition : Conditions_)
 	{
-		if(false == Condition->Check())
+		if(false == Condition->CheckCondition(Cast<UObject>(_Character)))
 		{
 			return false;
 		}

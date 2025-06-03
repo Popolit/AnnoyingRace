@@ -9,7 +9,7 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(Abstract, HideDropdown)
 class ANNOYINGRACE_API USkill_Target : public USkill
 {
 	GENERATED_BODY()

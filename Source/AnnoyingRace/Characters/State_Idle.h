@@ -20,6 +20,6 @@ public:
 
 	virtual void Move(const FInputActionInstance& _Instance, ACharacter* _Character) override;
 	virtual void Look(const FInputActionInstance& _Instance, ACharacter* _Character) override;
-	virtual void UseSkill(const FInputActionInstance& _Instance, ACharacter* _Character) override;
+	virtual void SkillButtonPushed(const FInputActionInstance& _Instance, ACharacter* _Character) override;
 };
 
