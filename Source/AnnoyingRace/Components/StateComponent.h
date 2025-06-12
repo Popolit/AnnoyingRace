@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Skills/IConditionContext.h"
 #include "StateComponent.generated.h"
 
 UENUM(BlueprintType)
@@ -38,10 +37,11 @@ public:
 	void Look(const struct FInputActionInstance& _Instance);
 	void SkillButtonPushed(const struct FInputActionInstance& _Instance);
 
+	void TakeDamage(ACharacter* _Character, float _DamageAmount, FDamageEvent const& _DamageEvent, AController* _EventInstigator, AActor* _DamageCauser);
 
 private:
 	TObjectPtr<class UState> CurrentState_;
 
 	UPROPERTY()
-	TMap<EState, TObjectPtr<UState>> States_;
+		TMap<EState, TObjectPtr<UState>> States_;
 };

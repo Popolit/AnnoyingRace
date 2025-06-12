@@ -1,13 +1,14 @@
 #include "Skill.h"
 
-#include "ICondition.h"
-#include "ITrigger.h"
+#include "Conditions/ICondition.h"
+#include "Triggers/ITrigger.h"
 #include "GameFramework/Character.h"
 
 USkill::USkill()
 {
 	SKillName_ = L"Default Skill";
 	RemainingUses_ = 0;
+	Damage_ = 0;
 }
 
 void USkill::Initialize(ACharacter* _Character)
@@ -18,6 +19,11 @@ void USkill::Initialize(ACharacter* _Character)
 		Trigger->Bind(_Character, [this](ACharacter* _Character)
 			{ this->TryTriggerSkill(_Character); });
 	}
+}
+
+uint8 USkill::GetDamage() const
+{
+	return Damage_;
 }
 
 void USkill::TryTriggerSkill(ACharacter* _Character)

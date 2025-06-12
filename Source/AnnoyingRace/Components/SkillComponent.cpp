@@ -21,6 +21,11 @@ void USkillComponent::SetTrigger(TFunction<void(ACharacter*)> _Func)
 	TriggerFunc_ = _Func;
 }
 
+uint8 USkillComponent::GetSkillDamage() const
+{
+	return Skill_->GetDamage();
+}
+
 void USkillComponent:: SkillButtonPushed(ACharacter* _Character)
 {
 	if(TriggerFunc_)

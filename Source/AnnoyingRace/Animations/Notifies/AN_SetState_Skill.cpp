@@ -1,8 +1,8 @@
-#include "Animations/AN_SetState_Hit.h"
+#include "AN_SetState_Skill.h"
 
 #include "Components/StateComponent.h"
 
-void UAN_SetState_Hit::Notify(USkeletalMeshComponent* _MeshComp, UAnimSequenceBase* _Animation)
+void UAN_SetState_Skill::Notify(USkeletalMeshComponent* _MeshComp, UAnimSequenceBase* _Animation)
 {
 	AActor* OwnerActor = _MeshComp->GetOwner();
 
@@ -18,7 +18,7 @@ void UAN_SetState_Hit::Notify(USkeletalMeshComponent* _MeshComp, UAnimSequenceBa
 
 		if (ensureMsgf(StateComponent, TEXT("%s's StateComponent was nullptr"), *OwnerActor->GetName()))
 		{
-			StateComponent->SetState(EState::Hit);
+			StateComponent->SetState(EState::Skill);
 		}
 	}
 }

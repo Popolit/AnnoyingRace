@@ -1,7 +1,7 @@
 #include "Skill_Push.h"
 
-#include "Condition_IdleState.h"
-#include "Trigger_SkillButtonPushed.h"
+#include "Conditions/Condition_IdleState.h"
+#include "Triggers/Trigger_SkillButtonPushed.h"
 #include "GameFramework/Character.h"
 
 

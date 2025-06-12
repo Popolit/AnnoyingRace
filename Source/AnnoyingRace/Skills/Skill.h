@@ -18,6 +18,8 @@ public:
 	//자식의 Initialize가 끝난 후 Super()를 호출할 것. 
 	virtual void Initialize(ACharacter* _Character);
 
+	uint8 GetDamage() const;
+
 protected:
 	virtual void TryTriggerSkill(ACharacter* _Character);
 
@@ -40,6 +42,9 @@ protected:
 private:
 	UPROPERTY(EditDefaultsOnly)
 		FName SKillName_;
+
+	UPROPERTY(EditDefaultsOnly)
+		uint8 Damage_;
 
 	//if Count is Inf, Set -1
 	UPROPERTY(EditDefaultsOnly)

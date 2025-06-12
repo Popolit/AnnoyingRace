@@ -23,6 +23,7 @@ APlayableCharacter::APlayableCharacter()
 	SpringArmComponent_->bUsePawnControlRotation = true;
 
 	CameraComponent_->SetRelativeLocation(FVector(-30.0, 0.0, 0.0));
+	HP_ = 1;
 }
 
 void APlayableCharacter::SetupPlayerInputComponent(UInputComponent* _PlayerInputComponent)
@@ -54,6 +55,38 @@ void APlayableCharacter::SetupPlayerInputComponent(UInputComponent* _PlayerInput
 		{
 			IC->BindAction(IA_UseSkill_, ETriggerEvent::Triggered, StateComponent_.Get(), &UStateComponent::SkillButtonPushed);
 		}
+	}
+}
+
+float APlayableCharacter::TakeDamage(float _DamageAmount, FDamageEvent const& _DamageEvent, AController* _EventInstigator, AActor* _DamageCauser)
+{
+	StateComponent_->TakeDamage(this, _DamageAmount, _DamageEvent, _EventInstigator, _DamageCauser);
+	return _DamageAmount;
+}
+
+
+void APlayableCharacter::ProcessHit(uint8 _DamageAmount, FDamageEvent const& _DamageEvent)
+{
+	if (HP_ < _DamageAmount)
+	{
+		HP_ = 0;
+		ProcessDeath();
+		return;
+	}
+
+	HP_ -= _DamageAmount;
+	if (ensureMsgf(HitAnimation_, TEXT("%s's DeathAnimation was nullptr"), *GetName()))
+	{
+		PlayAnimMontage(HitAnimation_);
+	}
+	StateComponent_->SetState(EState::Hit);
+}
+
+void APlayableCharacter::ProcessDeath()
+{
+	if (ensureMsgf(DeathAnimation_, TEXT("%s's DeathAnimation was nullptr"), *GetName()))
+	{
+		PlayAnimMontage(DeathAnimation_);
 	}
 }
 

@@ -1,8 +1,8 @@
 #include "StateComponent.h"
 
-#include "Characters/State_Idle.h"
-#include "Characters/State_Hit.h"
-#include "Characters/State_Skill.h"
+#include "Characters/States/State_Idle.h"
+#include "Characters/States/State_Hit.h"
+#include "Characters/States/State_Skill.h"
 
 #include "InputAction.h"
 #include "GameFramework/Character.h"
@@ -60,5 +60,14 @@ void UStateComponent::SkillButtonPushed(const FInputActionInstance& _Instance)
 	if (false == CurrentState_.IsNull())
 	{
 		CurrentState_->SkillButtonPushed(_Instance, Cast<ACharacter>(GetOuter()));
+	}
+}
+
+void UStateComponent::TakeDamage(ACharacter* _Character, float _DamageAmount, FDamageEvent const& _DamageEvent, AController* _EventInstigator,
+	AActor* _DamageCauser)
+{
+	if(false == CurrentState_.IsNull())
+	{
+		CurrentState_->TakeDamage(_Character, _DamageAmount, _DamageEvent, _EventInstigator, _DamageCauser);
 	}
 }

@@ -1,9 +1,9 @@
-#include "Characters/State_Idle.h"
+#include "State_Idle.h"
 
 #include "InputAction.h"
-#include "GameFramework/Character.h"
+#include "Characters/PlayableCharacter.h"
 #include "Components/SkillComponent.h"
-#include "Skills/Trigger_SkillButtonPushed.h"
+#include "Skills/Triggers/Trigger_SkillButtonPushed.h"
 
 void UState_Idle::Enter(class UStateComponent* _Comp)
 {
@@ -46,6 +46,17 @@ void UState_Idle::SkillButtonPushed(const FInputActionInstance& _Instance, AChar
 	if(ensureMsgf(SkillComponent, TEXT("%s's SKillComponent was nullptr"), *_Character->GetName()))
 	{
 		SkillComponent->SkillButtonPushed(_Character);
+	}
+}
+
+void UState_Idle::TakeDamage(ACharacter* _Character, float _DamageAmount, FDamageEvent const& _DamageEvent, AController* _EventInstigator,
+	AActor* _DamageCauser)
+{
+	APlayableCharacter* PC = Cast<APlayableCharacter>(_Character);
+
+	if (ensureMsgf(PC, TEXT("Character was nullptr")))
+	{
+		PC->ProcessHit(_DamageAmount, _DamageEvent);
 	}
 }
 

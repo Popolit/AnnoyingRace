@@ -14,9 +14,10 @@ public:
 
 	void SetTrigger(TFunction<void(ACharacter*)> _Func);
 
+	uint8 GetSkillDamage() const;
+
 public:
 	void SkillButtonPushed(ACharacter* _Character);
-
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = Skill)

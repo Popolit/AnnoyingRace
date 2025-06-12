@@ -1,4 +1,4 @@
-#include "Animations/AN_SetState_Idle.h"
+#include "AN_SetState_Idle.h"
 
 #include "Components/StateComponent.h"
 

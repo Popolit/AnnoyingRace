@@ -1,4 +1,4 @@
-#include "Skills/Condition_IdleState.h"
+#include "Condition_IdleState.h"
 #include "Components/StateComponent.h"
 
 bool UCondition_IdleState::CheckCondition(UObject* _Target) const
