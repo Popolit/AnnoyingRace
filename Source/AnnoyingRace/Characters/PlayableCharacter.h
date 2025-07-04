@@ -4,6 +4,9 @@
 #include "GameFramework/Character.h"
 #include "PlayableCharacter.generated.h"
 
+DECLARE_DELEGATE_OneParam(FOnCharacterDied, ACharacter*);
+DECLARE_DELEGATE_OneParam(FOnSkillButtonPushed, ACharacter*);
+
 UCLASS()
 class ANNOYINGRACE_API APlayableCharacter : public ACharacter
 {
@@ -20,9 +23,15 @@ public:
 
 	void ProcessDeath();
 
+	void SkillButtonPushed();
+
 private:
 	void CreateAllComponents();
 
+
+public:
+	FOnCharacterDied OnCharacterDied_;
+	FOnSkillButtonPushed OnSkillButtonPushed_;
 
 	//Components
 private:

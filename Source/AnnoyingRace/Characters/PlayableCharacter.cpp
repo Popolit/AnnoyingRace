@@ -12,6 +12,9 @@
 APlayableCharacter::APlayableCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	SetReplicates(true);
+	SetReplicateMovement(true);
+
 	CreateAllComponents();
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
@@ -84,10 +87,31 @@ void APlayableCharacter::ProcessHit(uint8 _DamageAmount, FDamageEvent const& _Da
 
 void APlayableCharacter::ProcessDeath()
 {
-	if (ensureMsgf(DeathAnimation_, TEXT("%s's DeathAnimation was nullptr"), *GetName()))
+	if(HasAuthority())
 	{
-		PlayAnimMontage(DeathAnimation_);
+		OnCharacterDied_.ExecuteIfBound(this);
+		if (ensureMsgf(DeathAnimation_, TEXT("%s's DeathAnimation was nullptr"), *GetName()))
+		{
+			PlayAnimMontage(DeathAnimation_);
+		}
 	}
+}
+
+void APlayableCharacter::SkillButtonPushed()
+{
+	if(HasAuthority())
+	{
+		if(OnSkillButtonPushed_.IsBound())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("SERVER: Bound"));
+		}
+	}
+	else if(OnSkillButtonPushed_.IsBound())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CLIENT: Bound"));
+	}
+
+	OnSkillButtonPushed_.ExecuteIfBound(this);
 }
 
 
@@ -97,7 +121,7 @@ void APlayableCharacter::CreateAllComponents()
 	SpringArmComponent_->SetupAttachment(GetMesh());
 
 	CameraComponent_ = CreateDefaultSubobject<UCameraComponent>("Camera");
-	CameraComponent_->SetupAttachment(SpringArmComponent_.Get());
+	CameraComponent_->SetupAttachment(SpringArmComponent_);
 
 	StateComponent_ = CreateDefaultSubobject<UStateComponent>("State");
 	SkillComponent_ = CreateDefaultSubobject<USkillComponent>("Skill");

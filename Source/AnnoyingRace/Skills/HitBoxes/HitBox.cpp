@@ -8,8 +8,10 @@
 void AHitBox::BeginPlay()
 {
 	Super::BeginPlay();
+	TArray<UShapeComponent*> ShapeComponents;
+	GetComponents<UShapeComponent>(ShapeComponents);
 
-	for(auto Elem : GetComponentsByClass(UShapeComponent::StaticClass()))
+	for(auto Elem : ShapeComponents)
 	{
 		UShapeComponent* Collision = Cast<UShapeComponent>(Elem);
 		Collision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -26,7 +28,10 @@ void AHitBox::BeginPlay()
 
 void AHitBox::EnableCollisions()
 {
-	for (auto Elem : GetComponentsByClass(UShapeComponent::StaticClass()))
+	TArray<UShapeComponent*> ShapeComponents;
+	GetComponents<UShapeComponent>(ShapeComponents);
+
+	for (auto Elem : ShapeComponents)
 	{
 		UShapeComponent* Collision = Cast<UShapeComponent>(Elem);
 		Collision->SetCollisionEnabled(ECollisionEnabled::NoCollision);

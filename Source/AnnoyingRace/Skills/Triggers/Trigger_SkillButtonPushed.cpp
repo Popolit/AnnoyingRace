@@ -1,22 +1,12 @@
 #include "Trigger_SkillButtonPushed.h"
 
+#include "Characters/PlayableCharacter.h"
 #include "GameFramework/Character.h"
-#include "Components/SkillComponent.h"
+#include "Skills/Skill.h"
 
-void UTrigger_SkillButtonPushed::Bind(ACharacter* _Character, TFunction<void(ACharacter*)> _Func)
+
+void UTrigger_SkillButtonPushed::Initialize(ACharacter* _Character, USkill* _OwnerSkill)
 {
-	USkillComponent* SkillComponent = Cast<USkillComponent>(_Character->GetComponentByClass(USkillComponent::StaticClass()));
-
-	if (ensureMsgf(SkillComponent, TEXT("%s's SkillComponent was nullptr"), *_Character->GetName()))
-	{
-		SkillComponent->SetTrigger(_Func);
-	}
-}
-
-void UTrigger_SkillButtonPushed::Triggered(ACharacter* _Character)
-{
-	if (Function_)
-	{
-		Function_(_Character);
-	}
+	APlayableCharacter* PlayableCharacter = Cast<APlayableCharacter>(_Character);
+	PlayableCharacter->OnSkillButtonPushed_.BindUObject(_OwnerSkill, &USkill::TryTriggerSkill);
 }

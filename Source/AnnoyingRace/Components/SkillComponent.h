@@ -10,21 +10,24 @@ class ANNOYINGRACE_API USkillComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:
-	virtual void BeginPlay() override;
+	USkillComponent();
 
-	void SetTrigger(TFunction<void(ACharacter*)> _Func);
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	virtual bool ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
+
+	virtual void BeginPlay() override;
 
 	uint8 GetSkillDamage() const;
 
-public:
-	void SkillButtonPushed(ACharacter* _Character);
+private:
+	UFUNCTION()
+		void OnRep_Skill();
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = Skill)
 		TSubclassOf<class USkill> SkillClass_;
 
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_Skill)
 		TObjectPtr<USkill> Skill_;
-
-	TFunction<void(ACharacter*)> TriggerFunc_;
 };

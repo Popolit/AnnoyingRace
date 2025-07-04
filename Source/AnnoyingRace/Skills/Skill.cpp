@@ -1,8 +1,9 @@
 #include "Skill.h"
 
-#include "Conditions/ICondition.h"
-#include "Triggers/ITrigger.h"
 #include "GameFramework/Character.h"
+#include "Conditions/ICondition.h"
+#include "Net/UnrealNetwork.h"
+#include "Triggers/Trigger.h"
 
 USkill::USkill()
 {
@@ -11,13 +12,23 @@ USkill::USkill()
 	Damage_ = 0;
 }
 
+bool USkill::IsSupportedForNetworking() const
+{
+	return true;
+}
+
+void USkill::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	UObject::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(USkill, RemainingUses_);
+}
+
 void USkill::Initialize(ACharacter* _Character)
 {
-	IITrigger* Trigger = SkillTrigger_.GetInterface();
-	if (Trigger)
+	if(SkillTriggerClass_)
 	{
-		Trigger->Bind(_Character, [this](ACharacter* _Character)
-			{ this->TryTriggerSkill(_Character); });
+		SkillTrigger_ = NewObject<UTrigger>(this, SkillTriggerClass_);
+		SkillTrigger_->Initialize(_Character, this);
 	}
 }
 
@@ -25,6 +36,7 @@ uint8 USkill::GetDamage() const
 {
 	return Damage_;
 }
+
 
 void USkill::TryTriggerSkill(ACharacter* _Character)
 {
