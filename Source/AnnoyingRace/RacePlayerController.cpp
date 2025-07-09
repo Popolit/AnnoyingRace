@@ -1,9 +1,11 @@
 #include "RacePlayerController.h"
 
-#include "Blueprint/UserWidget.h"
+#include "RaceGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "LevelSequenceActor.h"
-#include "RaceGameMode.h"
+#include "UI/DrawCharacterWidget.h"
+#include "UI/CountDownWidget.h"
+
 
 void ARacePlayerController::BeginPlay()
 {
@@ -18,11 +20,11 @@ void ARacePlayerController::BeginPlay()
 		{
 			ALevelSequenceActor* IntroSequenceActor = Cast<ALevelSequenceActor>(FoundActors[0]);
 			IntroSequenceActor->SetReplicates(true);
-
 			ULevelSequencePlayer* SequencePlayer = IntroSequenceActor->GetSequencePlayer();
 			if (SequencePlayer)
 			{
 				SequencePlayer->OnFinished.AddDynamic(this, &ARacePlayerController::OnIntroSequenceFinished);
+				SequencePlayer->Play();
 			}
 		}
 	}
@@ -31,44 +33,69 @@ void ARacePlayerController::BeginPlay()
 
 void ARacePlayerController::Multicast_OnIntroSequenceFinished_Implementation()
 {
-	if(IsLocalController())
-	{
-		if (ensureMsgf(DrawCharacterWidgetClass_, TEXT("WidgetClass was null")))
-		{
-			DrawCharacterWidget_ = CreateWidget(this, DrawCharacterWidgetClass_);
-			if (DrawCharacterWidget_)
-			{
-				DrawCharacterWidget_->AddToViewport();
-			}
-		}
-		Server_RequestDrawCharacter();
-	}
+	Server_RequestDrawCharacter();
 }
 
 void ARacePlayerController::Server_RequestDrawCharacter_Implementation()
 {
 	ARaceGameMode* GM = Cast<ARaceGameMode>(UGameplayStatics::GetGameMode(this));
-	GM->DrawNewCharacter(0, this);
+	GM->DrawNewCharacter(this);
 }
+
+
+void ARacePlayerController::Server_RequestSpawnCharacter_Implementation()
+{
+	ARaceGameMode* GM = Cast<ARaceGameMode>(UGameplayStatics::GetGameMode(this));
+	GM->SpawnNewCharacter(this);
+}
+
 
 void ARacePlayerController::OnIntroSequenceFinished()
 {
 	Multicast_OnIntroSequenceFinished();
 }
 
-void ARacePlayerController::StartRaceCountdown_Implementation(float _CountDownStartTime)
+void ARacePlayerController::Client_StartRaceCountdown_Implementation()
 {
-	if (ensureMsgf(CountdownWidgetClass_, TEXT("WidgetClass was null")))
+	if (ensureMsgf(CountDownWidgetClass_, TEXT("WidgetClass was null")))
 	{
-		CountdownWidget_ = CreateWidget(this, CountdownWidgetClass_);
+		CountdownWidget_ = CreateWidget<UCountDownWidget>(this, CountDownWidgetClass_);
 		if (CountdownWidget_)
 		{
-			//CountdownWidget_->AddToViewport();
+			CountdownWidget_->AddToViewport();
+			CountdownWidget_->OnCountdownAnimationFinished_.BindUObject(this, &ARacePlayerController::OnCountDownAnimationFinished);
 		}
 	}
 }
 
-void ARacePlayerController::DrawCharacter_Implementation()
+void ARacePlayerController::Client_ShowCharacterDrawResult_Implementation(const UCharacterData* _DrawnCharacterData)
 {
-	
+	if(DrawCharacterWidget_)
+	{
+		DrawCharacterWidget_->SetWidget(_DrawnCharacterData);
+		DrawCharacterWidget_->ShowWidget();
+	}
+	else if (ensureMsgf(DrawCharacterWidgetClass_, TEXT("WidgetClass was null")))
+	{
+		DrawCharacterWidget_ = CreateWidget<UDrawCharacterWidget>(this, DrawCharacterWidgetClass_);
+		if (DrawCharacterWidget_)
+		{
+			DrawCharacterWidget_->SetWidget(_DrawnCharacterData);
+			DrawCharacterWidget_->OnDrawAnimationFinished_.BindUObject(this, &ARacePlayerController::OnDrawAnimationFinished);
+			DrawCharacterWidget_->AddToViewport();
+			DrawCharacterWidget_->ShowWidget();
+		}
+	}
+}
+
+void ARacePlayerController::OnDrawAnimationFinished()
+{
+	Server_RequestSpawnCharacter();
+}
+
+
+void ARacePlayerController::OnCountDownAnimationFinished()
+{
+	CountdownWidget_->RemoveFromViewport();
+	CountdownWidget_->RemoveFromParent();
 }

@@ -6,6 +6,7 @@
 
 ARaceGameState::ARaceGameState()
 {
+	bRaceStarted_ = false;
 	MaxLap_ = 3;
 	ElapsedTime_ = 0;
 }
@@ -36,11 +37,16 @@ uint8 ARaceGameState::GetMaxLap() const
 	return MaxLap_;
 }
 
+bool ARaceGameState::IsRaceStarted()
+{
+	return bRaceStarted_;
+}
+
 void ARaceGameState::OnRep_CountdownStartTime()
 {
 	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
 	if (ARacePlayerController* RPC = Cast<ARacePlayerController>(PC))
 	{
-		RPC->StartRaceCountdown(CountdownStartTime_);
+		//RPC->StartRaceCountdown(CountdownStartTime_);
 	}
 }

@@ -1,17 +1,21 @@
 #include "RaceGameMode.h"
 
 #include "RaceGameState.h"
+#include "RacePlayerController.h"
 #include "RacePlayerState.h"
 #include "Characters/RaceSpectatorPawn.h"
-#include "GameFramework/Character.h"
+#include "Characters/PlayableCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "World/TrackSplineActor.h"
+#include "Characters/CharacterData.h"
 
 ARaceGameMode::ARaceGameMode()
 {
 	GameStateClass = ARaceGameState::StaticClass();
 	PlayerStateClass = ARacePlayerState::StaticClass();
-	DefaultPawnClass = ARaceSpectatorPawn::StaticClass();
+	DefaultPawnClass = nullptr;
+
+	bRaceStarted = false;
 }
 
 
@@ -35,43 +39,74 @@ void ARaceGameMode::PostLogin(APlayerController* _NewPlayer)
 	RacePlayerState->SetTargetCheckPointIndex(1);
 }
 
-void ARaceGameMode::DrawNewCharacter(uint8 _CheckPointIndex, APlayerController* _PC)
+void ARaceGameMode::DrawNewCharacter(APlayerController* _PC)
 {
-	check(_PC);
+	ARacePlayerController* PC = Cast<ARacePlayerController>(_PC);
+	check(PC);
 
 	if (CharacterQueue_.IsEmpty())
 	{
 		ShuffleCharacterQueue();
 	}
-	const TSubclassOf<ACharacter> NextCharacterClass = *CharacterQueue_.Peek();
+
+	UCharacterData* NextCharacterData = *CharacterQueue_.Peek();
 	CharacterQueue_.Pop();
 
-	check(NextCharacterClass);
+	check(NextCharacterData);
 
-	const FTransform SpawnTransform = TrackSpline_->GetSplinePointTransform(_CheckPointIndex);
+	PlayersCharacterInfo_.FindOrAdd(_PC) = NextCharacterData;
+	PC->Client_ShowCharacterDrawResult(NextCharacterData);
+
+}
+
+void ARaceGameMode::SpawnNewCharacter(APlayerController* _PC)
+{
+	UCharacterData* CharacterData = *PlayersCharacterInfo_.Find(_PC);
+
+	if (nullptr == CharacterData)
+	{
+		ensure(true);
+		return;
+	}
+	TSubclassOf<ACharacter> NextCharacterClass = CharacterData->GetCharacterClass();
+
+	FTransform SpawnTransform;
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = _PC;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-	ACharacter* NextCharacter = Cast<ACharacter>(GetWorld()->SpawnActor(*NextCharacterClass, &SpawnTransform, SpawnParams));
-	if (ensureMsgf(NextCharacter, TEXT("Character Spawn Failed")))
+	//Race가 진행되고 있을 때의 Spawn 위치
+	if (bRaceStarted)
 	{
-		APawn* PassedPawn = _PC->GetPawn();
-		if (_PC->GetPawn())
-		{
-			PassedPawn->Destroy();
-		}
-		//_PC->SetPawn(NextCharacter);
-		_PC->Possess(NextCharacter);
+		ARacePlayerState* PS = _PC->GetPlayerState<ARacePlayerState>();
+		check(PS);
 
-		// 디버깅 로그
-		if (NextCharacter->GetOwner() == _PC)
+		uint8 CheckPointIndex = PS->GetTargetCheckPointIndex();
+		CheckPointIndex++;
+		CheckPointIndex %= GetGameState<ARaceGameState>()->GetMaxCheckPointCount();
+		PS->SetTargetCheckPointIndex(CheckPointIndex);
+		SpawnTransform = TrackSpline_->GetSplinePointTransform(CheckPointIndex);
+	}
+	//레이스 시작 후 첫 출발시 Spawn 위치
+	else
+	{
+		const AActor* PlayerStart = FindPlayerStart(_PC);
+		if (PlayerStart)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Character %s is now correctly owned by %s"), *NextCharacter->GetName(), *_PC->GetName());
+			SpawnTransform = PlayerStart->GetTransform();
 		}
-		else
+	}
+
+	ACharacter* NextCharacter = GetWorld()->SpawnActor<ACharacter>(NextCharacterClass, SpawnTransform, SpawnParams);
+	check(NextCharacter);
+	_PC->Possess(NextCharacter);
+
+	if (false == bRaceStarted)
+	{
+		ARacePlayerController* RacePlayerController = Cast<ARacePlayerController>(_PC);
+		if(RacePlayerController)
 		{
-			UE_LOG(LogTemp, Error, TEXT("Character %s ownership FAILED! Owner is %s"), *NextCharacter->GetName(), *_PC->GetName());
+			RacePlayerController->Client_StartRaceCountdown();
 		}
 	}
 }
@@ -87,9 +122,7 @@ void ARaceGameMode::HandleCheckPointPassed(uint8 _CheckPointIndex, APlayerContro
 		return;
 	}
 
-	TargetCheckPointIndex++;
-	TargetCheckPointIndex %= GetGameState<ARaceGameState>()->GetMaxCheckPointCount();
-	PS->SetTargetCheckPointIndex(TargetCheckPointIndex);
+	
 	if(_CheckPointIndex == 0)
 	{
 		PS->IncreaseLap();
@@ -100,16 +133,22 @@ void ARaceGameMode::HandleCheckPointPassed(uint8 _CheckPointIndex, APlayerContro
 		}
 	}
 
-	DrawNewCharacter(_CheckPointIndex, _PC);
+	APawn* PassedPawn = _PC->GetPawn();
+	if (PassedPawn)
+	{
+		PassedPawn->Destroy();
+	}
+
+	DrawNewCharacter(_PC);
 }
 
-TSubclassOf<ACharacter> ARaceGameMode::PopNextCharacter()
+TObjectPtr<UCharacterData> ARaceGameMode::PopNextCharacter()
 {
 	//다음 캐릭터 클래스 선택
-	const TSubclassOf<ACharacter> CharacterClass = *CharacterQueue_.Peek();
+	const TObjectPtr<UCharacterData> CharacterData = *CharacterQueue_.Peek();
 	CharacterQueue_.Pop();
 
-	return CharacterClass;
+	return CharacterData;
 }
 
 void ARaceGameMode::StartRaceCountDown()

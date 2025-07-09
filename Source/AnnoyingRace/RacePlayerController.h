@@ -20,32 +20,36 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 		void Multicast_OnIntroSequenceFinished();
 
-	UFUNCTION(Server, Reliable)
-		void Server_RequestDrawCharacter();
-
-	//인스로 시퀀스 종료 바인딩 함수(서버)
 	UFUNCTION()
 		void OnIntroSequenceFinished();
 
 	UFUNCTION(Client, Reliable)
-		void StartRaceCountdown(float _CountDownStartTime);
+		void Client_StartRaceCountdown();
 
 	UFUNCTION(Client, Reliable)
-		void DrawCharacter();
+		void Client_ShowCharacterDrawResult(const class UCharacterData* _DrawnCharacterData);
 
 private:
-	void Server_RequestDrawCharacter_Implementation();
+	UFUNCTION(Server, Reliable)
+		void Server_RequestDrawCharacter();
+
+	UFUNCTION(Server, Reliable)
+		void Server_RequestSpawnCharacter();
+
+	void OnDrawAnimationFinished();
+
+	void OnCountDownAnimationFinished();
 
 private:
-	UPROPERTY()
-		TObjectPtr<UUserWidget> CountdownWidget_;
-
-	UPROPERTY()
-		TObjectPtr<UUserWidget> DrawCharacterWidget_;
+	UPROPERTY(EditDefaultsOnly)
+		TSubclassOf<class UCountDownWidget> CountDownWidgetClass_;
 
 	UPROPERTY(EditDefaultsOnly)
-		TSubclassOf<UUserWidget> CountdownWidgetClass_;
+		TSubclassOf<class UDrawCharacterWidget> DrawCharacterWidgetClass_;
 
-	UPROPERTY(EditDefaultsOnly)
-		TSubclassOf<UUserWidget> DrawCharacterWidgetClass_;
+	UPROPERTY()
+		TObjectPtr<UCountDownWidget> CountdownWidget_;
+
+	UPROPERTY()
+		TObjectPtr<UDrawCharacterWidget> DrawCharacterWidget_;
 };

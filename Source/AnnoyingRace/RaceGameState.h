@@ -24,6 +24,8 @@ public:
 
 	uint8 GetMaxLap() const;
 
+	bool IsRaceStarted();
+
 public:
 	UPROPERTY(ReplicatedUsing = OnRep_CountdownStartTime)
 		float CountdownStartTime_ = 0.f;
@@ -33,6 +35,7 @@ public:
 
 
 private:
+	bool bRaceStarted_;
 	uint8 MaxLap_;
 	uint8 MaxCheckPointCount_;
 	float ElapsedTime_;

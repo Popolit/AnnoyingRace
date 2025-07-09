@@ -43,8 +43,8 @@ protected:
 		TObjectPtr<UTrigger> SkillTrigger_;;
 
 	//Skill 발동에 필요한 조건들
-	UPROPERTY()
-		TArray<TObjectPtr<class IICondition>> Conditions_;
+	UPROPERTY(Replicated)
+		TArray<TObjectPtr<class UCondition_IdleState>> Conditions_;
 
 private:
 	UPROPERTY(EditDefaultsOnly)

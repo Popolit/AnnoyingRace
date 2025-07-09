@@ -1,7 +1,7 @@
 #include "Skill.h"
 
 #include "GameFramework/Character.h"
-#include "Conditions/ICondition.h"
+#include "Conditions/Condition_IdleState.h"
 #include "Net/UnrealNetwork.h"
 #include "Triggers/Trigger.h"
 
@@ -21,6 +21,7 @@ void USkill::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePr
 {
 	UObject::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(USkill, RemainingUses_);
+	DOREPLIFETIME(USkill, Conditions_);
 }
 
 void USkill::Initialize(ACharacter* _Character)
@@ -54,13 +55,13 @@ bool USkill::CheckConditions(ACharacter* _Character) const
 		return false;
 	}
 
-	for(const TObjectPtr<IICondition>& Condition : Conditions_)
+	/*for(const TObjectPtr<UCondition_IdleState>& Condition : Conditions_)
 	{
 		if(false == Condition->CheckCondition(Cast<UObject>(_Character)))
 		{
 			return false;
 		}
-	}
+	}*/
 	return true;
 }
 
