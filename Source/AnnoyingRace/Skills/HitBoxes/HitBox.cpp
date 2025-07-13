@@ -5,6 +5,11 @@
 #include "Kismet/GameplayStatics.h"
 
 
+AHitBox::AHitBox()
+{
+	SetReplicates(true);
+}
+
 void AHitBox::BeginPlay()
 {
 	Super::BeginPlay();

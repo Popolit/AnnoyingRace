@@ -11,8 +11,8 @@ UCLASS()
 class ANNOYINGRACE_API APlayableCharacter : public ACharacter
 {
 	GENERATED_BODY()
-
 public:
+
 	APlayableCharacter();
 
 	virtual void SetupPlayerInputComponent(UInputComponent* _PlayerInputComponent) override;
@@ -21,13 +21,20 @@ public:
 
 	void ProcessHit(uint8 _DamageAmount, FDamageEvent const& _DamageEvent);
 
-	void ProcessDeath();
 
 	void SkillButtonPushed();
 
-private:
-	void CreateAllComponents();
+	UFUNCTION(NetMulticast, Reliable)
+		void Multicast_ProcessDeath();
 
+	UFUNCTION(Server, Reliable)
+		void Server_PlayAnimMontage(UAnimMontage* _Montage);
+
+private:
+	UFUNCTION(NetMulticast, Reliable)
+		void Multicast_PlayAnimMontage(UAnimMontage* _Montage);
+
+	void CreateAllComponents();
 
 public:
 	FOnCharacterDied OnCharacterDied_;
@@ -40,7 +47,11 @@ private:
 	UPROPERTY(VisibleDefaultsOnly)
 		TObjectPtr<class UCameraComponent> CameraComponent_;
 	UPROPERTY(VisibleDefaultsOnly)
+		TObjectPtr<class UCameraComponent> ObservingCamera_;
+	UPROPERTY(VisibleDefaultsOnly)
 		TObjectPtr<class UStateComponent> StateComponent_;
+	UPROPERTY(VisibleDefaultsOnly)
+		TObjectPtr<class UStatusComponent> StatusComponent_;
 	UPROPERTY(VisibleDefaultsOnly)
 		TObjectPtr<class USkillComponent> SkillComponent_;
 
@@ -60,7 +71,6 @@ private:
 		TObjectPtr<UAnimMontage> HitAnimation_;
 	UPROPERTY(EditDefaultsOnly, Category = Animation)
 		TObjectPtr<UAnimMontage> DeathAnimation_;
-
 	UPROPERTY(EditDefaultsOnly)
-		uint8 HP_;
+		float LifeSpanAfterDeath;
 };

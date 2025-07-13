@@ -16,4 +16,6 @@ public:
 	virtual void Initialize(ACharacter* _Character) override;
 
 	virtual void TriggerSkill(ACharacter* _Character) override;
+
+
 };

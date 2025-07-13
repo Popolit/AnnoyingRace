@@ -10,6 +10,8 @@ class ANNOYINGRACE_API AHitBox : public AActor
 	GENERATED_BODY()
 
 public:
+	AHitBox();
+
 	virtual void BeginPlay() override;
 
 	void EnableCollisions();

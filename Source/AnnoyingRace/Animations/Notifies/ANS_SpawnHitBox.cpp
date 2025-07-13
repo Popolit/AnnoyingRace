@@ -10,26 +10,36 @@ void UANS_SpawnHitBox::NotifyBegin(USkeletalMeshComponent* _MeshComp, UAnimSeque
 {
     check(_MeshComp);
 
-    if(_MeshComp->HasBegunPlay())
+    if (false == _MeshComp->HasBegunPlay())
     {
-        if(ensureMsgf(HitBoxClass_, TEXT("%s's HitBox class was not set"), *this->GetName()))
-        {
-            HitBox_ = Cast<AHitBox>(_MeshComp->GetWorld()->SpawnActor(HitBoxClass_));
-            check(HitBox_);
+        return;
+    }
 
-            HitBox_->SetOwner(_MeshComp->GetOwner());
-            HitBox_->AttachToComponent(_MeshComp, FAttachmentTransformRules::KeepRelativeTransform);
+	AActor* OwnerActor = _MeshComp->GetOwner();
+    if(OwnerActor && OwnerActor->HasAuthority())
+    {
+	    if(ensureMsgf(HitBoxClass_, TEXT("%s's HitBox class was not set"), *this->GetName()))
+	    {
+	        HitBox_ = Cast<AHitBox>(_MeshComp->GetWorld()->SpawnActor(HitBoxClass_));
+	        check(HitBox_);
 
-            HitBox_->EnableCollisions();
-        }
+	        HitBox_->SetOwner(_MeshComp->GetOwner());
+	        HitBox_->AttachToComponent(_MeshComp, FAttachmentTransformRules::KeepRelativeTransform);
+
+	        HitBox_->EnableCollisions();
+	    }
     }
 }
 
 void UANS_SpawnHitBox::NotifyEnd(USkeletalMeshComponent* _MeshComp, UAnimSequenceBase* _Animation)
 {
-    if(HitBox_)
-    {
-		HitBox_->Destroy();
-    }
-    HitBox_ = nullptr;
+	AActor* OwnerActor = _MeshComp->GetOwner();
+	if (OwnerActor && OwnerActor->HasAuthority())
+	{
+		if (HitBox_)
+		{
+			HitBox_->Destroy();
+		}
+		HitBox_ = nullptr;
+	}
 }

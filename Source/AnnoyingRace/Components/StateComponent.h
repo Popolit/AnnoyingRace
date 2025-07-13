@@ -10,6 +10,7 @@ enum class EState : uint8
 	Idle    UMETA(DisplayName = "Idle"),
 	Hit    UMETA(DisplayName = "Hit"),
 	Skill  UMETA(DisplayName = "Skill"),
+	Death	UMETA(DisplayName = "Death"),
 };
 
 

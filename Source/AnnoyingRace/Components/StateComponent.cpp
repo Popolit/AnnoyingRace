@@ -3,6 +3,7 @@
 #include "Characters/States/State_Idle.h"
 #include "Characters/States/State_Hit.h"
 #include "Characters/States/State_Skill.h"
+#include "Characters/States/State_Death.h"
 
 #include "InputAction.h"
 #include "GameFramework/Character.h"
@@ -19,6 +20,7 @@ void UStateComponent::BeginPlay()
 	States_.Add(EState::Idle, NewObject<UState_Idle>(this, "State_Idle"));
 	States_.Add(EState::Hit, NewObject<UState_Hit>(this, "State_Hit"));
 	States_.Add(EState::Skill, NewObject<UState_Skill>(this, "State_Skill"));
+	States_.Add(EState::Death, NewObject<UState_Death>(this, "State_Death"));
 
 	CurrentState_ = States_[EState::Idle];
 }

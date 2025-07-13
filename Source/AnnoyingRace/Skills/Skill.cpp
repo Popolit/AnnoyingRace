@@ -1,7 +1,6 @@
 #include "Skill.h"
 
-#include "GameFramework/Character.h"
-#include "Conditions/Condition_IdleState.h"
+#include "Characters/PlayableCharacter.h"
 #include "Net/UnrealNetwork.h"
 #include "Triggers/Trigger.h"
 
@@ -65,4 +64,12 @@ bool USkill::CheckConditions(ACharacter* _Character) const
 	return true;
 }
 
+void USkill::PlayAnimMontage(ACharacter* _Character) const
+{
+	APlayableCharacter* Character = Cast<APlayableCharacter>(_Character);
+	if(Character)
+	{
+		Character->Server_PlayAnimMontage(Animation_);
+	}
+}
 

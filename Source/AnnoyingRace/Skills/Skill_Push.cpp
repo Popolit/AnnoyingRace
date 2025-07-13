@@ -16,10 +16,5 @@ void USkill_Push::Initialize(ACharacter* _Character)
 
 void USkill_Push::TriggerSkill(ACharacter* _Character)
 {
-	if (Animation_.IsNull())
-	{
-		ensureMsgf(true, TEXT("%s's AnimMontage was nullptr"), *GetName());
-		return;
-	}
-	_Character->PlayAnimMontage(Animation_);
+	PlayAnimMontage(_Character);
 }

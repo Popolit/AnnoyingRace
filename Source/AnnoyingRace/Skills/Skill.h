@@ -31,10 +31,9 @@ protected:
 
 	virtual void TriggerSkill(ACharacter* _Character) PURE_VIRTUAL(...)
 
-protected:
-	UPROPERTY(EditDefaultsOnly)
-		TObjectPtr<class UAnimMontage> Animation_;
+	void PlayAnimMontage(ACharacter* _Character) const;
 
+protected:
 	//Skill을 발동시키는 조건, 비우면 트리거가 없는 스킬
 	UPROPERTY(EditDefaultsOnly)
 		TSubclassOf<class UTrigger> SkillTriggerClass_;
@@ -47,6 +46,9 @@ protected:
 		TArray<TObjectPtr<class UCondition_IdleState>> Conditions_;
 
 private:
+	UPROPERTY(EditDefaultsOnly)
+		TObjectPtr<class UAnimMontage> Animation_;
+
 	UPROPERTY(EditDefaultsOnly)
 		FName SKillName_;
 

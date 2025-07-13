@@ -7,6 +7,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Components/SkillComponent.h"
+#include "Components/StatusComponent.h"
 
 
 APlayableCharacter::APlayableCharacter()
@@ -16,8 +17,10 @@ APlayableCharacter::APlayableCharacter()
 	SetReplicateMovement(true);
 
 	CreateAllComponents();
-
-	GetCharacterMovement()->bOrientRotationToMovement = true;
+	
+	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+	MovementComponent->MaxWalkSpeed = StatusComponent_->GetSpeed();
+	MovementComponent->bOrientRotationToMovement = true;
 	bUseControllerRotationYaw = false;
 
 	SpringArmComponent_->SetRelativeLocation(FVector(0.0, 0.0, 150.0));
@@ -26,7 +29,11 @@ APlayableCharacter::APlayableCharacter()
 	SpringArmComponent_->bUsePawnControlRotation = true;
 
 	CameraComponent_->SetRelativeLocation(FVector(-30.0, 0.0, 0.0));
-	HP_ = 1;
+
+	ObservingCamera_->SetRelativeLocation(FVector(-230, 0, 600));
+	ObservingCamera_->SetRelativeRotation(FRotator(-80, 0, 0));
+
+	LifeSpanAfterDeath = 3.f;
 }
 
 void APlayableCharacter::SetupPlayerInputComponent(UInputComponent* _PlayerInputComponent)
@@ -70,48 +77,70 @@ float APlayableCharacter::TakeDamage(float _DamageAmount, FDamageEvent const& _D
 
 void APlayableCharacter::ProcessHit(uint8 _DamageAmount, FDamageEvent const& _DamageEvent)
 {
-	if (HP_ < _DamageAmount)
+	StatusComponent_->DamageToHP(_DamageAmount);
+
+	//사망 했으면 히트처리하지 않음
+	if(StateComponent_->CheckCurrentState(EState::Death))
 	{
-		HP_ = 0;
-		ProcessDeath();
 		return;
 	}
 
-	HP_ -= _DamageAmount;
-	if (ensureMsgf(HitAnimation_, TEXT("%s's DeathAnimation was nullptr"), *GetName()))
+	if(HitAnimation_)
 	{
-		PlayAnimMontage(HitAnimation_);
+		StateComponent_->SetState(EState::Hit);
+		Server_PlayAnimMontage(HitAnimation_);
 	}
-	StateComponent_->SetState(EState::Hit);
 }
 
-void APlayableCharacter::ProcessDeath()
-{
-	if(HasAuthority())
-	{
-		OnCharacterDied_.ExecuteIfBound(this);
-		if (ensureMsgf(DeathAnimation_, TEXT("%s's DeathAnimation was nullptr"), *GetName()))
-		{
-			PlayAnimMontage(DeathAnimation_);
-		}
-	}
-}
+
+//void APlayableCharacter::ProcessDeath()
+//{
+//	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+//	check(AnimInstance)
+//	FOnMontageEnded OnMontageEnded;
+//	OnMontageEnded.BindUObject(this, &APlayableCharacter::OnDeathAnimationEnded);
+//
+//	AnimInstance->Montage_SetEndDelegate(OnMontageEnded, DeathAnimation_);
+//
+//	Server_PlayAnimMontage(DeathAnimation_);
+//}
 
 void APlayableCharacter::SkillButtonPushed()
 {
-	if(HasAuthority())
-	{
-		if(OnSkillButtonPushed_.IsBound())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("SERVER: Bound"));
-		}
-	}
-	else if(OnSkillButtonPushed_.IsBound())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("CLIENT: Bound"));
-	}
-
 	OnSkillButtonPushed_.ExecuteIfBound(this);
+}
+
+void APlayableCharacter::Multicast_ProcessDeath_Implementation()
+{
+	StateComponent_->SetState(EState::Death);
+
+	USkeletalMeshComponent* MeshComponent = GetMesh();
+	check(MeshComponent);
+	MeshComponent->SetCollisionProfileName(FName("Ragdoll"));
+	MeshComponent->SetSimulatePhysics(true);
+	SetLifeSpan(3.f);
+
+	if(CameraComponent_)
+	{
+		CameraComponent_->Deactivate();
+	}
+	if (ObservingCamera_)
+	{
+		ObservingCamera_->Activate();
+	}
+}
+
+void APlayableCharacter::Server_PlayAnimMontage_Implementation(UAnimMontage* _Montage)
+{
+	if(_Montage)
+	{
+		Multicast_PlayAnimMontage(_Montage);
+	}
+}
+
+void APlayableCharacter::Multicast_PlayAnimMontage_Implementation(UAnimMontage* _Montage)
+{
+	PlayAnimMontage(_Montage);
 }
 
 
@@ -123,6 +152,11 @@ void APlayableCharacter::CreateAllComponents()
 	CameraComponent_ = CreateDefaultSubobject<UCameraComponent>("Camera");
 	CameraComponent_->SetupAttachment(SpringArmComponent_);
 
+	ObservingCamera_ = CreateDefaultSubobject<UCameraComponent>("Observing Camera");
+	ObservingCamera_->SetupAttachment(GetRootComponent());
+
 	StateComponent_ = CreateDefaultSubobject<UStateComponent>("State");
+	StatusComponent_ = CreateDefaultSubobject<UStatusComponent>("Status");
 	SkillComponent_ = CreateDefaultSubobject<USkillComponent>("Skill");
 }
+
