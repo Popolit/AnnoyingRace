@@ -10,6 +10,8 @@ UStatusComponent::UStatusComponent()
 	BaseSpeed_ = 400.f;
 	AddedSpeedBonus_ = 0.f;
 	MultipliedSpeedBonus_ = 0.f;
+
+	SetIsReplicatedByDefault(true);
 }
 
 void UStatusComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -55,7 +57,7 @@ void UStatusComponent::DamageToHP(float _Amount)
 			if (HP_ <= 0.f)
 			{
 				HP_ = 0.f;
-				Character->Multicast_ProcessDeath();
+				Character->ProcessDeath();
 			}
 		}
 	}

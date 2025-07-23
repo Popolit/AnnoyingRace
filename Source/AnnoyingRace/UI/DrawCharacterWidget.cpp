@@ -7,9 +7,9 @@
 
 void UDrawCharacterWidget::SetWidget(const UCharacterData* _CharacterData)
 {
-	TxtCharacterName_->SetText(_CharacterData->GetCharacterName());
-	ImgCharacter_->SetBrushFromSoftTexture(_CharacterData->GetCharacterIcon());
-	TxtSkillInfo_->SetText(_CharacterData->GetSkillInfo());
+	Txt_CharacterName_->SetText(_CharacterData->GetCharacterName());
+	Img_Character_->SetBrushFromSoftTexture(_CharacterData->GetCharacterIcon());
+	Txt_SkillInfo_->SetText(_CharacterData->GetSkillInfo());
 }
 
 void UDrawCharacterWidget::ShowWidget()
@@ -22,7 +22,7 @@ void UDrawCharacterWidget::OnAnimationFinished_Implementation(const UWidgetAnima
 {
 	if(_Animation == Anim_FadeInOut_)
 	{
-		SetVisibility(ESlateVisibility::Hidden);
+		SetVisibility(ESlateVisibility::Collapsed);
 		OnDrawAnimationFinished_.ExecuteIfBound();
 	}
 }

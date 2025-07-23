@@ -7,9 +7,9 @@
 DECLARE_DELEGATE(FOnCountdownFinished);
 
 /**
- * Count Down when Race Begin
+ * Show Count Down when Race Begin
  */
-UCLASS()
+UCLASS(HideDropdown)
 class ANNOYINGRACE_API UCountDownWidget : public UUserWidget
 {
 	GENERATED_BODY()
@@ -24,14 +24,12 @@ private:
 
 private:
 	UPROPERTY(meta = (BindWidget))
-		TObjectPtr<class UTextBlock> TxtCountDown_;
+		TObjectPtr<class UTextBlock> Txt_CountDown_;
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
-		TObjectPtr<UWidgetAnimation> AnimCountDown_;
+		TObjectPtr<UWidgetAnimation> Anim_CountDown_;
 
 	UINT CountDown_ = 3;
-
-	FTimerHandle CountDownTimerHandle_;
 
 public:
 	FOnCountdownFinished OnCountdownAnimationFinished_;

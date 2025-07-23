@@ -1,9 +1,9 @@
 #include "RaceGameMode.h"
 
+#include "LevelSequenceActor.h"
 #include "RaceGameState.h"
-#include "RacePlayerController.h"
 #include "RacePlayerState.h"
-#include "Characters/RaceSpectatorPawn.h"
+#include "RacePlayerController.h"
 #include "Characters/PlayableCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "World/TrackSplineActor.h"
@@ -14,10 +14,8 @@ ARaceGameMode::ARaceGameMode()
 	GameStateClass = ARaceGameState::StaticClass();
 	PlayerStateClass = ARacePlayerState::StaticClass();
 	DefaultPawnClass = nullptr;
-
-	bRaceStarted = false;
+	UnReadiedPlayerCount_ = 0;
 }
-
 
 void ARaceGameMode::StartPlay()
 {
@@ -26,8 +24,28 @@ void ARaceGameMode::StartPlay()
 	ShuffleCharacterQueue();
 
 	TrackSpline_ = Cast<ATrackSplineActor>(UGameplayStatics::GetActorOfClass(GetWorld(), ATrackSplineActor::StaticClass()));
+	check(TrackSpline_);
 
-	GetGameState<ARaceGameState>()->SetMaxCheckPointCount(TrackSpline_->GetNumberOfCheckPoints());
+	ARaceGameState* GS = GetGameState<ARaceGameState>();
+	check(GS);
+
+	GS->SetMaxCheckPointCount(TrackSpline_->GetNumberOfCheckPoints());
+}
+
+void ARaceGameMode::StartMatch()
+{
+	Super::StartMatch();
+
+	ARaceGameState* GS = GetGameState<ARaceGameState>();
+	check(GS);
+
+	//인트로 연출 재생
+	for(auto Player : GS->PlayerArray)
+	{
+		auto PC = Cast<ARacePlayerController>(Player->GetPlayerController());
+		check(PC);
+		PC->PlaySequence("Intro");
+	}
 }
 
 void ARaceGameMode::PostLogin(APlayerController* _NewPlayer)
@@ -36,11 +54,31 @@ void ARaceGameMode::PostLogin(APlayerController* _NewPlayer)
 
 	ARacePlayerState* RacePlayerState = _NewPlayer->GetPlayerState<ARacePlayerState>();
 	check(RacePlayerState);
-	RacePlayerState->SetTargetCheckPointIndex(1);
+	RacePlayerState->SetCheckPointIndex(0);
+}
+
+bool ARaceGameMode::ReadyToStartMatch_Implementation()
+{
+	//TODO : 모든 유저의 접속을 확인하는 로직으로 변경
+	return 2 <= NumPlayers;
+}
+
+
+
+void ARaceGameMode::HandlePlayerDeath(APlayerController* _PC) const
+{
+	ARacePlayerController* PC = Cast<ARacePlayerController>(_PC);
+	check(PC);
+
+	PC->Client_DisableCharacterInput();
+	PC->Client_ShowCharacterDiedWidget();
 }
 
 void ARaceGameMode::DrawNewCharacter(APlayerController* _PC)
 {
+	ARacePlayerState* PS = _PC->GetPlayerState<ARacePlayerState>();
+	check(PS);
+
 	ARacePlayerController* PC = Cast<ARacePlayerController>(_PC);
 	check(PC);
 
@@ -54,20 +92,18 @@ void ARaceGameMode::DrawNewCharacter(APlayerController* _PC)
 
 	check(NextCharacterData);
 
-	PlayersCharacterInfo_.FindOrAdd(_PC) = NextCharacterData;
+	PS->SetCharacterData(NextCharacterData);
 	PC->Client_ShowCharacterDrawResult(NextCharacterData);
-
 }
 
 void ARaceGameMode::SpawnNewCharacter(APlayerController* _PC)
 {
-	UCharacterData* CharacterData = *PlayersCharacterInfo_.Find(_PC);
+	ARacePlayerState* PS = _PC->GetPlayerState<ARacePlayerState>();
+	check(PS);
 
-	if (nullptr == CharacterData)
-	{
-		ensure(true);
-		return;
-	}
+	UCharacterData* CharacterData = PS->GetCharacterData();
+	check(CharacterData);
+
 	TSubclassOf<ACharacter> NextCharacterClass = CharacterData->GetCharacterClass();
 
 	FTransform SpawnTransform;
@@ -75,20 +111,9 @@ void ARaceGameMode::SpawnNewCharacter(APlayerController* _PC)
 	SpawnParams.Owner = _PC;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-	//Race가 진행되고 있을 때의 Spawn 위치
-	if (bRaceStarted)
-	{
-		ARacePlayerState* PS = _PC->GetPlayerState<ARacePlayerState>();
-		check(PS);
-
-		uint8 CheckPointIndex = PS->GetTargetCheckPointIndex();
-		CheckPointIndex++;
-		CheckPointIndex %= GetGameState<ARaceGameState>()->GetMaxCheckPointCount();
-		PS->SetTargetCheckPointIndex(CheckPointIndex);
-		SpawnTransform = TrackSpline_->GetSplinePointTransform(CheckPointIndex);
-	}
-	//레이스 시작 후 첫 출발시 Spawn 위치
-	else
+	//레이스가 아직 시작하지 않은 첫 Spawn
+	//PlayerStart에 Spawn, 레이스 준비가 된 플레이어로 간주함.
+	if (false == bRaceStarted_)
 	{
 		const AActor* PlayerStart = FindPlayerStart(_PC);
 		if (PlayerStart)
@@ -96,41 +121,46 @@ void ARaceGameMode::SpawnNewCharacter(APlayerController* _PC)
 			SpawnTransform = PlayerStart->GetTransform();
 		}
 	}
+	else
+	{
+		const uint8 CheckPointIndex = PS->GetCheckPointIndex();
+		SpawnTransform = TrackSpline_->GetSplinePointTransform(CheckPointIndex);
+
+		ARacePlayerController* PC = Cast<ARacePlayerController>(_PC);
+		if(PC)
+		{
+			PC->Client_EnableCharacterInput();
+		}
+	}
 
 	ACharacter* NextCharacter = GetWorld()->SpawnActor<ACharacter>(NextCharacterClass, SpawnTransform, SpawnParams);
 	check(NextCharacter);
 	_PC->Possess(NextCharacter);
-
-	if (false == bRaceStarted)
-	{
-		ARacePlayerController* RacePlayerController = Cast<ARacePlayerController>(_PC);
-		if(RacePlayerController)
-		{
-			RacePlayerController->Client_StartRaceCountdown();
-		}
-	}
 }
+
 
 void ARaceGameMode::HandleCheckPointPassed(uint8 _CheckPointIndex, APlayerController* _PC)
 {
 	ARacePlayerState* PS = _PC->GetPlayerState<ARacePlayerState>();
-	check(PS);
+	ARaceGameState* GS = GetGameState<ARaceGameState>();
+	check(PS && GS);
 
-	uint8 TargetCheckPointIndex = PS->GetTargetCheckPointIndex();
+	const uint8 TargetCheckPointIndex = (PS->GetCheckPointIndex() + 1) % GS->GetMaxCheckPointCount();
 	if(_CheckPointIndex != TargetCheckPointIndex)
 	{
 		return;
 	}
 
-	
+
+	//한바퀴를 돌아 Laps 증가
 	if(_CheckPointIndex == 0)
 	{
-		PS->IncreaseLap();
 		if (GetGameState<ARaceGameState>()->GetMaxLap() <= PS->GetLaps())
 		{
 			//완주 처리 코드
 			return;
 		}
+		PS->IncreaseLap();
 	}
 
 	APawn* PassedPawn = _PC->GetPawn();
@@ -139,7 +169,23 @@ void ARaceGameMode::HandleCheckPointPassed(uint8 _CheckPointIndex, APlayerContro
 		PassedPawn->Destroy();
 	}
 
+	PS->SetCheckPointIndex(TargetCheckPointIndex);
 	DrawNewCharacter(_PC);
+}
+
+void ARaceGameMode::StartRaceCountDown()
+{
+	ARaceGameState* GS = GetGameState<ARaceGameState>();
+	check(GS);
+
+	for(auto PS : GS->PlayerArray)
+	{
+		auto PC = Cast<ARacePlayerController>(PS->GetPlayerController());
+		check(PC);
+
+		PC->Client_StartRaceCountdown();
+	}
+	bRaceStarted_ = true;
 }
 
 TObjectPtr<UCharacterData> ARaceGameMode::PopNextCharacter()
@@ -149,14 +195,6 @@ TObjectPtr<UCharacterData> ARaceGameMode::PopNextCharacter()
 	CharacterQueue_.Pop();
 
 	return CharacterData;
-}
-
-void ARaceGameMode::StartRaceCountDown()
-{
-}
-
-void ARaceGameMode::RemoveBlockVolumes()
-{
 }
 
 void ARaceGameMode::ShuffleCharacterQueue()
@@ -174,9 +212,4 @@ void ARaceGameMode::ShuffleCharacterQueue()
 		IsSelected[Index] = true;
 		CharacterQueue_.Enqueue(CharacterPool_[Index]);
 	}
-}
-
-void ARaceGameMode::ChangeCharacter()
-{
-	
 }

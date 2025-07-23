@@ -1,5 +1,6 @@
 #include "PlayableCharacter.h"
 
+#include "RaceGameMode.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/StateComponent.h"
@@ -8,6 +9,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Components/SkillComponent.h"
 #include "Components/StatusComponent.h"
+#include "GameFramework/SpectatorPawn.h"
 
 
 APlayableCharacter::APlayableCharacter()
@@ -18,9 +20,6 @@ APlayableCharacter::APlayableCharacter()
 
 	CreateAllComponents();
 	
-	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
-	MovementComponent->MaxWalkSpeed = StatusComponent_->GetSpeed();
-	MovementComponent->bOrientRotationToMovement = true;
 	bUseControllerRotationYaw = false;
 
 	SpringArmComponent_->SetRelativeLocation(FVector(0.0, 0.0, 150.0));
@@ -33,7 +32,16 @@ APlayableCharacter::APlayableCharacter()
 	ObservingCamera_->SetRelativeLocation(FVector(-230, 0, 600));
 	ObservingCamera_->SetRelativeRotation(FRotator(-80, 0, 0));
 
-	LifeSpanAfterDeath = 3.f;
+	LifeSpanAfterDeath_ = 3.f;
+}
+
+void APlayableCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+	MovementComponent->MaxWalkSpeed = StatusComponent_->GetSpeed();
+	MovementComponent->bOrientRotationToMovement = true;
 }
 
 void APlayableCharacter::SetupPlayerInputComponent(UInputComponent* _PlayerInputComponent)
@@ -41,30 +49,17 @@ void APlayableCharacter::SetupPlayerInputComponent(UInputComponent* _PlayerInput
 	UEnhancedInputComponent* IC = Cast<UEnhancedInputComponent>(_PlayerInputComponent);
 	check(IC);
 
-	
-	if (ensureMsgf(IMC_, TEXT("%s's Input Mapping Context was nullptr"), *GetName()))
+	if (ensureMsgf(IA_Move_, TEXT("%s's IA_Move was nullptr"), *GetName()))
 	{
-		if(const APlayerController* PC = Cast<APlayerController>(GetController()))
-		{
-			if (UEnhancedInputLocalPlayerSubsystem* SubSystem =
-				ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
-			{
-				SubSystem->AddMappingContext(IMC_, 0);
-			}
-		}
-
-		if (ensureMsgf(IA_Move_, TEXT("%s's IA_Move was nullptr"), *GetName()))
-		{
-			IC->BindAction(IA_Move_, ETriggerEvent::Triggered, StateComponent_.Get(), &UStateComponent::Move);
-		}
-		if (ensureMsgf(IA_Look_, TEXT("%s's IA_Look was nullptr"), *GetName()))
-		{
-			IC->BindAction(IA_Look_, ETriggerEvent::Triggered, StateComponent_.Get(), &UStateComponent::Look);
-		}
-		if (ensureMsgf(IA_UseSkill_, TEXT("%s's IA_UseSkill was nullptr"), *GetName()))
-		{
-			IC->BindAction(IA_UseSkill_, ETriggerEvent::Triggered, StateComponent_.Get(), &UStateComponent::SkillButtonPushed);
-		}
+		IC->BindAction(IA_Move_, ETriggerEvent::Triggered, StateComponent_.Get(), &UStateComponent::Move);
+	}
+	if (ensureMsgf(IA_Look_, TEXT("%s's IA_Look was nullptr"), *GetName()))
+	{
+		IC->BindAction(IA_Look_, ETriggerEvent::Triggered, StateComponent_.Get(), &UStateComponent::Look);
+	}
+	if (ensureMsgf(IA_UseSkill_, TEXT("%s's IA_UseSkill was nullptr"), *GetName()))
+	{
+		IC->BindAction(IA_UseSkill_, ETriggerEvent::Triggered, StateComponent_.Get(), &UStateComponent::SkillButtonPushed);
 	}
 }
 
@@ -92,22 +87,31 @@ void APlayableCharacter::ProcessHit(uint8 _DamageAmount, FDamageEvent const& _Da
 	}
 }
 
-
-//void APlayableCharacter::ProcessDeath()
-//{
-//	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-//	check(AnimInstance)
-//	FOnMontageEnded OnMontageEnded;
-//	OnMontageEnded.BindUObject(this, &APlayableCharacter::OnDeathAnimationEnded);
-//
-//	AnimInstance->Montage_SetEndDelegate(OnMontageEnded, DeathAnimation_);
-//
-//	Server_PlayAnimMontage(DeathAnimation_);
-//}
-
 void APlayableCharacter::SkillButtonPushed()
 {
 	OnSkillButtonPushed_.ExecuteIfBound(this);
+}
+
+void APlayableCharacter::ProcessDeath()
+{
+	if (HasAuthority())
+	{
+		if (ARaceGameMode* GM = GetWorld()->GetAuthGameMode<ARaceGameMode>())
+		{
+			APlayerController* PC = Cast <APlayerController >(GetController());
+			//GM->HandlePlayerDeath(PC);
+		}
+		Multicast_ProcessDeath();
+	}
+}
+
+
+void APlayableCharacter::Server_PlayAnimMontage_Implementation(UAnimMontage* _Montage)
+{
+	if(_Montage)
+	{
+		Multicast_PlayAnimMontage(_Montage);
+	}
 }
 
 void APlayableCharacter::Multicast_ProcessDeath_Implementation()
@@ -116,26 +120,20 @@ void APlayableCharacter::Multicast_ProcessDeath_Implementation()
 
 	USkeletalMeshComponent* MeshComponent = GetMesh();
 	check(MeshComponent);
-	MeshComponent->SetCollisionProfileName(FName("Ragdoll"));
+	MeshComponent->SetCollisionProfileName(TEXT("Ragdoll"));
 	MeshComponent->SetSimulatePhysics(true);
-	SetLifeSpan(3.f);
+	SetLifeSpan(LifeSpanAfterDeath_);
 
-	if(CameraComponent_)
+	if(APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
-		CameraComponent_->Deactivate();
+		if(APawn* SpectatorPawn = PC->GetSpectatorPawn())
+		{
+			SpectatorPawn->SetActorTransform(CameraComponent_->GetComponentTransform());
+			PC->Possess(SpectatorPawn);
+		}
+		
 	}
-	if (ObservingCamera_)
-	{
-		ObservingCamera_->Activate();
-	}
-}
-
-void APlayableCharacter::Server_PlayAnimMontage_Implementation(UAnimMontage* _Montage)
-{
-	if(_Montage)
-	{
-		Multicast_PlayAnimMontage(_Montage);
-	}
+	OnCharacterDied_.ExecuteIfBound(this);
 }
 
 void APlayableCharacter::Multicast_PlayAnimMontage_Implementation(UAnimMontage* _Montage)

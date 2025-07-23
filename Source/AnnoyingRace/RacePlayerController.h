@@ -13,21 +13,23 @@ class ANNOYINGRACE_API ARacePlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
-	virtual void BeginPlay() override;
+	void PlaySequence(const FName& _SequenceName);
 
-public:
-	//인트로 시퀀스 종료 후 멀티캐스트
-	UFUNCTION(NetMulticast, Reliable)
-		void Multicast_OnIntroSequenceFinished();
+	UFUNCTION(Client, Reliable)
+		void Client_EnableCharacterInput();
 
-	UFUNCTION()
-		void OnIntroSequenceFinished();
+	UFUNCTION(Client, Reliable)
+		void Client_DisableCharacterInput();
+
+	UFUNCTION(Client, Reliable)
+		void Client_ShowCharacterDiedWidget();
 
 	UFUNCTION(Client, Reliable)
 		void Client_StartRaceCountdown();
 
 	UFUNCTION(Client, Reliable)
 		void Client_ShowCharacterDrawResult(const class UCharacterData* _DrawnCharacterData);
+
 
 private:
 	UFUNCTION(Server, Reliable)
@@ -40,6 +42,10 @@ private:
 
 	void OnCountDownAnimationFinished();
 
+	void OnCharacterDiedAnimationFinished();
+
+	void UpdateDistanceAlongSpline();
+
 private:
 	UPROPERTY(EditDefaultsOnly)
 		TSubclassOf<class UCountDownWidget> CountDownWidgetClass_;
@@ -47,9 +53,37 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 		TSubclassOf<class UDrawCharacterWidget> DrawCharacterWidgetClass_;
 
+	UPROPERTY(EditDefaultsOnly)
+		TSubclassOf<class UCharacterDiedWidget> CharacterDiedWidgetClass_;
+
+	UPROPERTY(EditDefaultsOnly)
+		TSubclassOf<UUserWidget> PlayerHUDWidgetClass_;
+
 	UPROPERTY()
 		TObjectPtr<UCountDownWidget> CountdownWidget_;
 
 	UPROPERTY()
 		TObjectPtr<UDrawCharacterWidget> DrawCharacterWidget_;
+
+	UPROPERTY()
+		TObjectPtr<UCharacterDiedWidget> CharacterDiedWidget_;
+
+	UPROPERTY()
+		TObjectPtr<UUserWidget> PlayerHUDWidget_;
+
+private:
+	UPROPERTY()
+		TObjectPtr<class ATrackSplineActor> TrackSplineActor_;
+
+	//캐릭터 인풋
+	UPROPERTY(EditDefaultsOnly, Category = Input)
+		TObjectPtr<class UInputMappingContext> IMC_Character_;
+
+	//공용 인풋 (Ex : 메뉴 열기 등)
+	UPROPERTY(EditDefaultsOnly, Category = Input)
+		TObjectPtr<class UInputMappingContext> IMC_Default_;
+
+	FTimerHandle DistanceUpdateTimerHandle_;
+
+	bool bEnableCharacterInput_ = false;
 };

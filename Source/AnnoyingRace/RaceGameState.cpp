@@ -1,21 +1,41 @@
 #include "RaceGameState.h"
 
-#include "RacePlayerController.h"
-#include "Kismet/GameplayStatics.h"
+#include "LevelSequenceActor.h"
 #include "Net/UnrealNetwork.h"
+
 
 ARaceGameState::ARaceGameState()
 {
-	bRaceStarted_ = false;
 	MaxLap_ = 3;
-	ElapsedTime_ = 0;
+	ElapsedTime_ = 0.f;
 }
 
 void ARaceGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(ARaceGameState, CountdownStartTime_);
+	DOREPLIFETIME(ARaceGameState, RaceStartTime_);
+	DOREPLIFETIME(ARaceGameState, SequencActor_);
 }
+
+void ARaceGameState::HandleStartRace()
+{
+	if (HasAuthority())
+	{
+		RaceStartTime_ = GetServerWorldTimeSeconds();
+	}
+}
+
+void ARaceGameState::SetSequenceActor(ALevelSequenceActor* _SequenceActor)
+{
+	SequencActor_ = GetWorld()->SpawnActor<ALevelSequenceActor>();
+	SequencActor_->SetReplicatePlayback(true);
+}
+
+ALevelSequenceActor* ARaceGameState::GetSequenceActor() const
+{
+	return SequencActor_;
+}
+
 
 void ARaceGameState::SetMaxCheckPointCount(uint8 _Count)
 {
@@ -37,16 +57,11 @@ uint8 ARaceGameState::GetMaxLap() const
 	return MaxLap_;
 }
 
-bool ARaceGameState::IsRaceStarted()
+float ARaceGameState::GetRaceElapsedTime() const
 {
-	return bRaceStarted_;
-}
-
-void ARaceGameState::OnRep_CountdownStartTime()
-{
-	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-	if (ARacePlayerController* RPC = Cast<ARacePlayerController>(PC))
+	if (ElapsedTime_ > 0.f)
 	{
-		//RPC->StartRaceCountdown(CountdownStartTime_);
+		return GetServerWorldTimeSeconds() - ElapsedTime_;
 	}
+	return 0.f;
 }

@@ -1,20 +1,26 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameStateBase.h"
+#include "GameFramework/GameState.h"
 #include "RaceGameState.generated.h"
 
 /**
  * Race Game State
  */
 UCLASS()
-class ANNOYINGRACE_API ARaceGameState : public AGameStateBase
+class ANNOYINGRACE_API ARaceGameState : public AGameState
 {
 	GENERATED_BODY()
 public:
 	ARaceGameState();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	void HandleStartRace();
+
+	void SetSequenceActor(class ALevelSequenceActor* _SequenceActor);
+
+	ALevelSequenceActor* GetSequenceActor() const;
 
 	void SetMaxCheckPointCount(uint8 _Count);
 
@@ -24,19 +30,18 @@ public:
 
 	uint8 GetMaxLap() const;
 
-	bool IsRaceStarted();
-
-public:
-	UPROPERTY(ReplicatedUsing = OnRep_CountdownStartTime)
-		float CountdownStartTime_ = 0.f;
-
-	UFUNCTION()
-		void OnRep_CountdownStartTime();
-
+	float GetRaceElapsedTime() const;
 
 private:
-	bool bRaceStarted_;
+	UPROPERTY(Replicated)
+		TObjectPtr<ALevelSequenceActor> SequencActor_;
+
 	uint8 MaxLap_;
+
 	uint8 MaxCheckPointCount_;
-	float ElapsedTime_;
+
+	UPROPERTY(Replicated)
+		float RaceStartTime_;
+
+	long double ElapsedTime_;
 };

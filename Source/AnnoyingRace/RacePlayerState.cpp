@@ -1,10 +1,30 @@
 #include "RacePlayerState.h"
 
+#include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
+
 ARacePlayerState::ARacePlayerState()
 {
-	Laps_ = 0;
-	TargetCheckPointIndex_ = 0;
+	Laps_ = 1;
+	CurrentCheckPointIndex_ = 0;
 	Distance_ = 0;
+}
+
+
+void ARacePlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ARacePlayerState, Laps_);
+}
+
+TObjectPtr<UCharacterData> ARacePlayerState::GetCharacterData() const
+{
+	return CharacterData_;
+}
+
+void ARacePlayerState::SetCharacterData(UCharacterData* _CharacterData)
+{
+	CharacterData_ = _CharacterData;
 }
 
 uint8 ARacePlayerState::GetLaps() const
@@ -14,15 +34,34 @@ uint8 ARacePlayerState::GetLaps() const
 
 void ARacePlayerState::IncreaseLap()
 {
-	Laps_++;
+	if(HasAuthority())
+	{
+		Laps_++;
+		OnRep_Laps();
+	}
 }
 
-uint8 ARacePlayerState::GetTargetCheckPointIndex() const
+uint8 ARacePlayerState::GetCheckPointIndex() const
 {
-	return TargetCheckPointIndex_;
+	return CurrentCheckPointIndex_;
 }
 
-void ARacePlayerState::SetTargetCheckPointIndex(uint8 _Index)
+void ARacePlayerState::SetCheckPointIndex(uint8 _Index)
 {
-	TargetCheckPointIndex_ = _Index;
+	CurrentCheckPointIndex_ = _Index;
+}
+
+float ARacePlayerState::GetTotalDistance() const
+{
+	return Distance_;
+}
+
+void ARacePlayerState::SetTotalDistance(float _Distance)
+{
+	Distance_ = _Distance;
+}
+
+void ARacePlayerState::OnRep_Laps()
+{
+	OnLapsChanged_.ExecuteIfBound(Laps_);
 }

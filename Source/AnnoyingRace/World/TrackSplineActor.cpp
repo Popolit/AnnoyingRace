@@ -37,8 +37,6 @@ float ATrackSplineActor::GetTotalDistance(FVector _Pos) const
 	
 	//현재 가장 가까운 Spline의 지점 가져오기
 	const float Distance = Spline_->FindInputKeyClosestToWorldLocation(_Pos);
-	float Ret = Spline_->GetSplineLength() - Spline_->GetDistanceAlongSplineAtSplineInputKey(Distance);
 
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::SanitizeFloat(Ret));
-	return Spline_->GetSplineLength() - Spline_->GetDistanceAlongSplineAtSplineInputKey(Distance);
+	return Spline_->GetDistanceAlongSplineAtSplineInputKey(Distance);
 }

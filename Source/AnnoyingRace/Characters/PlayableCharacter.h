@@ -12,8 +12,9 @@ class ANNOYINGRACE_API APlayableCharacter : public ACharacter
 {
 	GENERATED_BODY()
 public:
-
 	APlayableCharacter();
+
+	virtual void BeginPlay() override;
 
 	virtual void SetupPlayerInputComponent(UInputComponent* _PlayerInputComponent) override;
 
@@ -21,16 +22,17 @@ public:
 
 	void ProcessHit(uint8 _DamageAmount, FDamageEvent const& _DamageEvent);
 
-
 	void SkillButtonPushed();
 
-	UFUNCTION(NetMulticast, Reliable)
-		void Multicast_ProcessDeath();
+	void ProcessDeath();
 
 	UFUNCTION(Server, Reliable)
 		void Server_PlayAnimMontage(UAnimMontage* _Montage);
 
 private:
+	UFUNCTION(NetMulticast, Reliable)
+		void Multicast_ProcessDeath();
+
 	UFUNCTION(NetMulticast, Reliable)
 		void Multicast_PlayAnimMontage(UAnimMontage* _Montage);
 
@@ -58,8 +60,6 @@ private:
 	//Inputs
 private:
 	UPROPERTY(EditDefaultsOnly, Category = Input)
-		TObjectPtr<class UInputMappingContext> IMC_;
-	UPROPERTY(EditDefaultsOnly, Category = Input)
 		TObjectPtr<class UInputAction> IA_Move_;
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 		TObjectPtr<class UInputAction> IA_Look_;
@@ -72,5 +72,5 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = Animation)
 		TObjectPtr<UAnimMontage> DeathAnimation_;
 	UPROPERTY(EditDefaultsOnly)
-		float LifeSpanAfterDeath;
+		float LifeSpanAfterDeath_;
 };

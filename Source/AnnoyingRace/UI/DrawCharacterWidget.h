@@ -9,7 +9,7 @@ DECLARE_DELEGATE(FOnDrawAnimationFinished)
 /**
  * Draw Character Widget
  */
-UCLASS()
+UCLASS(HideDropdown)
 class ANNOYINGRACE_API UDrawCharacterWidget : public UUserWidget
 {
 	GENERATED_BODY()
@@ -23,13 +23,13 @@ public:
 
 private:
 	UPROPERTY(meta = (BindWidget))
-		TObjectPtr<class UTextBlock> TxtCharacterName_;
+		TObjectPtr<class UTextBlock> Txt_CharacterName_;
 
 	UPROPERTY(meta = (BindWidget))
-		TObjectPtr<class UImage> ImgCharacter_;
+		TObjectPtr<class UImage> Img_Character_;
 
 	UPROPERTY(meta = (BindWidget))
-		TObjectPtr<UTextBlock> TxtSkillInfo_;
+		TObjectPtr<UTextBlock> Txt_SkillInfo_;
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 		TObjectPtr<UWidgetAnimation> Anim_FadeInOut_;

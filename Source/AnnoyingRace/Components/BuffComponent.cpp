@@ -40,12 +40,15 @@ void UBuffComponent::TickComponent(float _DeltaTime, ELevelTick _TickType, FActo
 	AActor* Actor = GetOwner();
 	if (ensureMsgf(Actor, TEXT("Buff Owner was nullptr")))
 	{
-		if (0.f < BuffRemain_)
+		if(Actor->HasAuthority())
 		{
-			BuffRemain_ -= _DeltaTime;
-			if (BuffRemain_ <= 0.f)
+			if (0.f < BuffRemain_)
 			{
-				OnBuffEnd(Actor);
+				BuffRemain_ -= _DeltaTime;
+				if (BuffRemain_ <= 0.f)
+				{
+					OnBuffEnd(Actor);
+				}
 			}
 		}
 	}

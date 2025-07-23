@@ -14,8 +14,6 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-
-
 	UFUNCTION()
 		void OnCollisionOverlapped(AActor* _OverlappedActor, AActor* _OtherActor);
 

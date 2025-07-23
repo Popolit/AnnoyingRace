@@ -1,58 +1,78 @@
 #include "RacePlayerController.h"
 
+#include "EnhancedInputSubsystems.h"
 #include "RaceGameMode.h"
-#include "Kismet/GameplayStatics.h"
+#include "RaceGameState.h"
 #include "LevelSequenceActor.h"
+#include "RacePlayerState.h"
+#include "Kismet/GameplayStatics.h"
+#include "UI/CharacterDiedWidget.h"
 #include "UI/DrawCharacterWidget.h"
 #include "UI/CountDownWidget.h"
+#include "World/TrackSplineActor.h"
 
 
-void ARacePlayerController::BeginPlay()
+void ARacePlayerController::PlaySequence(const FName& _SequenceName)
 {
-	Super::BeginPlay();
+	TArray<AActor*> OutActors;
+	UGameplayStatics::GetAllActorsOfClassWithTag(this, ALevelSequenceActor::StaticClass(), _SequenceName, OutActors);
 
-	if (HasAuthority())
+	if (ensureMsgf(OutActors.IsValidIndex(0), TEXT("Level SequenceTag was Invalid")))
 	{
-		TArray<AActor*> FoundActors;
-		UGameplayStatics::GetAllActorsOfClassWithTag(GetWorld(), ALevelSequenceActor::StaticClass(), FName("IntroSequence"), FoundActors);
-
-		if (ensureMsgf(FoundActors.Num() > 0, TEXT("Cannot find IntroSequence Actor")))
+		ALevelSequenceActor* SequenceActor = Cast<ALevelSequenceActor>(OutActors[0]);
+		if (ensure(SequenceActor && SequenceActor->SequencePlayer))
 		{
-			ALevelSequenceActor* IntroSequenceActor = Cast<ALevelSequenceActor>(FoundActors[0]);
-			IntroSequenceActor->SetReplicates(true);
-			ULevelSequencePlayer* SequencePlayer = IntroSequenceActor->GetSequencePlayer();
-			if (SequencePlayer)
-			{
-				SequencePlayer->OnFinished.AddDynamic(this, &ARacePlayerController::OnIntroSequenceFinished);
-				SequencePlayer->Play();
-			}
+			SequenceActor->SequencePlayer->Play();
 		}
 	}
 }
 
 
-void ARacePlayerController::Multicast_OnIntroSequenceFinished_Implementation()
+void ARacePlayerController::Client_EnableCharacterInput_Implementation()
 {
-	Server_RequestDrawCharacter();
+	if (false == bEnableCharacterInput_)
+	{
+		auto Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+		if (Subsystem)
+		{
+			Subsystem->AddMappingContext(IMC_Character_, 1);
+		}
+		bEnableCharacterInput_ = true;
+	}
 }
 
-void ARacePlayerController::Server_RequestDrawCharacter_Implementation()
+void ARacePlayerController::Client_DisableCharacterInput_Implementation()
 {
-	ARaceGameMode* GM = Cast<ARaceGameMode>(UGameplayStatics::GetGameMode(this));
-	GM->DrawNewCharacter(this);
+	if (bEnableCharacterInput_)
+	{
+		auto Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+		if (Subsystem)
+		{
+			Subsystem->RemoveMappingContext(IMC_Character_);
+		}
+		bEnableCharacterInput_ = false;
+	}
 }
 
 
-void ARacePlayerController::Server_RequestSpawnCharacter_Implementation()
+void ARacePlayerController::Client_ShowCharacterDiedWidget_Implementation()
 {
-	ARaceGameMode* GM = Cast<ARaceGameMode>(UGameplayStatics::GetGameMode(this));
-	GM->SpawnNewCharacter(this);
-}
-
-
-void ARacePlayerController::OnIntroSequenceFinished()
-{
-	Multicast_OnIntroSequenceFinished();
+	if (CharacterDiedWidget_)
+	{
+		CharacterDiedWidget_->SetWidget();
+		CharacterDiedWidget_->ShowWidget();
+	}
+	else if (ensureMsgf(CharacterDiedWidgetClass_, TEXT("WidgetClass was null")))
+	{
+		CharacterDiedWidget_ = CreateWidget<UCharacterDiedWidget>(this, CharacterDiedWidgetClass_);
+		if (CharacterDiedWidget_)
+		{
+			CharacterDiedWidget_->SetWidget();
+			CharacterDiedWidget_->OnCharacterDIedAnimationFinished_.BindUObject(this, &ARacePlayerController::OnCharacterDiedAnimationFinished);
+			CharacterDiedWidget_->AddToViewport();
+			CharacterDiedWidget_->ShowWidget();
+		}
+	}
 }
 
 void ARacePlayerController::Client_StartRaceCountdown_Implementation()
@@ -62,8 +82,8 @@ void ARacePlayerController::Client_StartRaceCountdown_Implementation()
 		CountdownWidget_ = CreateWidget<UCountDownWidget>(this, CountDownWidgetClass_);
 		if (CountdownWidget_)
 		{
-			CountdownWidget_->AddToViewport();
 			CountdownWidget_->OnCountdownAnimationFinished_.BindUObject(this, &ARacePlayerController::OnCountDownAnimationFinished);
+			CountdownWidget_->AddToViewport();
 		}
 	}
 }
@@ -88,6 +108,21 @@ void ARacePlayerController::Client_ShowCharacterDrawResult_Implementation(const 
 	}
 }
 
+void ARacePlayerController::Server_RequestDrawCharacter_Implementation()
+{
+	ARaceGameMode* GM = Cast<ARaceGameMode>(UGameplayStatics::GetGameMode(this));
+	GM->DrawNewCharacter(this);
+}
+
+
+void ARacePlayerController::Server_RequestSpawnCharacter_Implementation()
+{
+	ARaceGameMode* GM = Cast<ARaceGameMode>(UGameplayStatics::GetGameMode(this));
+	GM->SpawnNewCharacter(this);
+}
+
+
+
 void ARacePlayerController::OnDrawAnimationFinished()
 {
 	Server_RequestSpawnCharacter();
@@ -96,6 +131,45 @@ void ARacePlayerController::OnDrawAnimationFinished()
 
 void ARacePlayerController::OnCountDownAnimationFinished()
 {
+	ARaceGameState* GS = GetWorld()->GetGameState<ARaceGameState>();
+	check(GS);
+
+	GS->HandleStartRace();
+	Client_EnableCharacterInput();
+
 	CountdownWidget_->RemoveFromViewport();
 	CountdownWidget_->RemoveFromParent();
+
+	if(ensureMsgf(PlayerHUDWidgetClass_, TEXT("WidgetClass was null")))
+	{
+		PlayerHUDWidget_ = CreateWidget(this, PlayerHUDWidgetClass_);
+		PlayerHUDWidget_->AddToViewport();
+	}
 }
+
+void ARacePlayerController::OnCharacterDiedAnimationFinished()
+{
+	Server_RequestDrawCharacter();
+}
+
+void ARacePlayerController::UpdateDistanceAlongSpline()
+{
+	ARacePlayerState* PS = GetPlayerState<ARacePlayerState>();
+	APawn* MyPawn = GetPawn();
+
+	if (PS && MyPawn)
+	{
+		if (nullptr == TrackSplineActor_)
+		{
+			TrackSplineActor_ = Cast<ATrackSplineActor>(UGameplayStatics::GetActorOfClass(GetWorld(), ATrackSplineActor::StaticClass()));
+		}
+
+		if (TrackSplineActor_)
+		{
+			const float CurrentDistance = TrackSplineActor_->GetTotalDistance(MyPawn->GetActorLocation());
+
+			PS->SetTotalDistance(CurrentDistance);
+		}
+	}
+}
+
