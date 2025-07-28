@@ -1,8 +1,17 @@
 #include "CheckPointBox.h"
 
 #include "RaceGameMode.h"
+#include "Camera/CameraComponent.h"
 #include "Components/ShapeComponent.h"
 #include "GameFramework/Character.h"
+
+ACheckPointBox::ACheckPointBox()
+{
+	SetRootComponent(Root_);
+	Camera_ = CreateDefaultSubobject<UCameraComponent>("Camera");
+	Camera_->SetupAttachment(Root_);
+	Camera_->SetRelativeLocation(FVector::ZeroVector);
+}
 
 void ACheckPointBox::BeginPlay()
 {

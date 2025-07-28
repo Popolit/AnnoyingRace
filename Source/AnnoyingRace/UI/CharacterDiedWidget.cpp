@@ -11,6 +11,7 @@ void UCharacterDiedWidget::SetWidget()
 
 void UCharacterDiedWidget::ShowWidget()
 {
+	SetVisibility(ESlateVisibility::HitTestInvisible);
 	PlayAnimation(Anim_CountDown_);
 }
 
@@ -18,6 +19,7 @@ void UCharacterDiedWidget::OnAnimationFinished_Implementation(const UWidgetAnima
 {
 	if(_Animation == Anim_CountDown_)
 	{
+		SetVisibility(ESlateVisibility::Collapsed);
 		OnCharacterDIedAnimationFinished_.ExecuteIfBound();
 	}
 }

@@ -12,6 +12,8 @@ class ANNOYINGRACE_API ACheckPointBox : public ATriggerBox
 {
 	GENERATED_BODY()
 public:
+	ACheckPointBox();
+
 	virtual void BeginPlay() override;
 
 public:
@@ -26,4 +28,10 @@ public:
 private:
 	UPROPERTY(EditInstanceOnly)
 		uint8 Index_;
+
+	UPROPERTY(VisibleDefaultsOnly)
+		TObjectPtr<USceneComponent> Root_;
+
+	UPROPERTY(EditInstanceOnly)
+		TObjectPtr<class UCameraComponent> Camera_;
 };

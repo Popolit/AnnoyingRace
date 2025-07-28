@@ -13,7 +13,20 @@ class ANNOYINGRACE_API ARacePlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+	ARacePlayerController();
+
+protected:
+	virtual void OnPossess(APawn* _Pawn) override;
+
+	virtual void OnUnPossess() override;
+
+	virtual void SetupInputComponent() override;
+
+public:
 	void PlaySequence(const FName& _SequenceName);
+
+	//Transform에서 관전자 모드
+	void SetSpectatorMode(const FTransform& _TransformToSpectate);
 
 	UFUNCTION(Client, Reliable)
 		void Client_EnableCharacterInput();
@@ -30,8 +43,9 @@ public:
 	UFUNCTION(Client, Reliable)
 		void Client_ShowCharacterDrawResult(const class UCharacterData* _DrawnCharacterData);
 
-
 private:
+	void OpenMenu();
+
 	UFUNCTION(Server, Reliable)
 		void Server_RequestDrawCharacter();
 
@@ -59,6 +73,9 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 		TSubclassOf<UUserWidget> PlayerHUDWidgetClass_;
 
+	UPROPERTY(EditDefaultsOnly)
+		TSubclassOf<UUserWidget> RaceMenuWidgetClass_;
+
 	UPROPERTY()
 		TObjectPtr<UCountDownWidget> CountdownWidget_;
 
@@ -71,6 +88,9 @@ private:
 	UPROPERTY()
 		TObjectPtr<UUserWidget> PlayerHUDWidget_;
 
+	UPROPERTY()
+		TObjectPtr<UUserWidget> RaceMenuWidget_;
+
 private:
 	UPROPERTY()
 		TObjectPtr<class ATrackSplineActor> TrackSplineActor_;
@@ -82,6 +102,9 @@ private:
 	//공용 인풋 (Ex : 메뉴 열기 등)
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 		TObjectPtr<class UInputMappingContext> IMC_Default_;
+
+	UPROPERTY(EditDefaultsOnly, Category = Input)
+		TObjectPtr<class UInputAction> IA_ToggleMenu_;
 
 	FTimerHandle DistanceUpdateTimerHandle_;
 

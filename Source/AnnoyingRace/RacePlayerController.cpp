@@ -1,16 +1,67 @@
 #include "RacePlayerController.h"
 
+#include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "RaceGameMode.h"
 #include "RaceGameState.h"
 #include "LevelSequenceActor.h"
 #include "RacePlayerState.h"
+#include "GameFramework/SpectatorPawn.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/CharacterDiedWidget.h"
 #include "UI/DrawCharacterWidget.h"
 #include "UI/CountDownWidget.h"
 #include "World/TrackSplineActor.h"
 
+ARacePlayerController::ARacePlayerController()
+{
+	InputComponent = CreateDefaultSubobject<UEnhancedInputComponent>("InputComponent");
+}
+
+void ARacePlayerController::OnPossess(APawn* _Pawn)
+{
+	Super::OnPossess(_Pawn);
+
+	if (HasAuthority())
+	{
+		//관전 중(사망)의 경우 제외
+		auto CastedPawn = Cast<ASpectatorPawn>(_Pawn);
+		if(nullptr == _Pawn || CastedPawn)
+		{
+			return;
+		}
+
+		//0.2초에 한번 거리를 갱신
+		GetWorldTimerManager().SetTimer(
+			DistanceUpdateTimerHandle_,
+			this,
+			&ARacePlayerController::UpdateDistanceAlongSpline,
+			0.2f,
+			true 
+		);
+	}
+}
+
+void ARacePlayerController::OnUnPossess()
+{
+	GetWorldTimerManager().ClearTimer(DistanceUpdateTimerHandle_);
+
+	Super::OnUnPossess();
+}
+
+void ARacePlayerController::SetupInputComponent()
+{
+	auto Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+	if (Subsystem)
+	{
+		Subsystem->AddMappingContext(IMC_Default_, 0);
+	}
+	auto IC = Cast<UEnhancedInputComponent>(InputComponent);
+	if (ensureMsgf(IA_ToggleMenu_, TEXT("%s's IA_ToggleMenu_ was nullptr"), *GetName()))
+	{
+		IC->BindAction(IA_ToggleMenu_, ETriggerEvent::Triggered, this, &ARacePlayerController::OpenMenu);
+	}
+}
 
 void ARacePlayerController::PlaySequence(const FName& _SequenceName)
 {
@@ -24,6 +75,23 @@ void ARacePlayerController::PlaySequence(const FName& _SequenceName)
 		{
 			SequenceActor->SequencePlayer->Play();
 		}
+	}
+}
+
+void ARacePlayerController::SetSpectatorMode(const FTransform& _TransformToSpectate)
+{
+	if (HasAuthority())
+	{
+		ARaceGameMode* GM = Cast<ARaceGameMode>(UGameplayStatics::GetGameMode(this));
+		check(GM);
+
+		if(nullptr == GM->SpectatorClass)
+		{
+			ensure(false);
+			return;
+		}
+		auto SpawnedPawn = GetWorld()->SpawnActor<ASpectatorPawn>(GM->SpectatorClass, _TransformToSpectate);
+		Possess(SpawnedPawn);
 	}
 }
 
@@ -108,6 +176,19 @@ void ARacePlayerController::Client_ShowCharacterDrawResult_Implementation(const 
 	}
 }
 
+void ARacePlayerController::OpenMenu()
+{
+	if (RaceMenuWidget_)
+	{
+		RaceMenuWidget_->SetVisibility(ESlateVisibility::Visible);
+	}
+	else if(ensureMsgf(RaceMenuWidgetClass_, TEXT("WidgetClass was null")))
+	{
+		RaceMenuWidget_ = CreateWidget(this, RaceMenuWidgetClass_);
+		RaceMenuWidget_->AddToViewport(30);
+	}
+}
+
 void ARacePlayerController::Server_RequestDrawCharacter_Implementation()
 {
 	ARaceGameMode* GM = Cast<ARaceGameMode>(UGameplayStatics::GetGameMode(this));
@@ -157,7 +238,7 @@ void ARacePlayerController::UpdateDistanceAlongSpline()
 	ARacePlayerState* PS = GetPlayerState<ARacePlayerState>();
 	APawn* MyPawn = GetPawn();
 
-	if (PS && MyPawn)
+	if (ensure(PS && MyPawn))
 	{
 		if (nullptr == TrackSplineActor_)
 		{

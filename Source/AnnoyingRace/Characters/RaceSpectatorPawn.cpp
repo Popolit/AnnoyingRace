@@ -1,20 +1,39 @@
 #include "RaceSpectatorPawn.h"
 
-#include "GameFramework/SpringArmComponent.h"
-#include "Camera/CameraComponent.h"
+#include "EnhancedInputComponent.h"
+#include "InputTriggers.h"
 
-ARaceSpectatorPawn::ARaceSpectatorPawn()
+
+
+void ARaceSpectatorPawn::SetupPlayerInputComponent(UInputComponent* _PlayerInputComponent)
 {
-	SpringArmComponent_ = CreateDefaultSubobject<USpringArmComponent>("SpringArm");
-	SpringArmComponent_->SetupAttachment(GetRootComponent());
+	UEnhancedInputComponent* IC = Cast<UEnhancedInputComponent>(_PlayerInputComponent);
+	check(IC);
 
-	CameraComponent_ = CreateDefaultSubobject<UCameraComponent>("Camera");
-	CameraComponent_->SetupAttachment(SpringArmComponent_.Get());
+	if (ensureMsgf(IA_Move_, TEXT("%s's IA_Move was nullptr"), *GetName()))
+	{
+		IC->BindAction(IA_Move_, ETriggerEvent::Triggered, this, &ARaceSpectatorPawn::Move);
+	}
+	if (ensureMsgf(IA_Look_, TEXT("%s's IA_Look was nullptr"), *GetName()))
+	{
+		IC->BindAction(IA_Look_, ETriggerEvent::Triggered, this, &ARaceSpectatorPawn::Look);
+	}
+}
 
-	SpringArmComponent_->SetRelativeLocation(FVector(0.0, 0.0, 150.0));
-	SpringArmComponent_->SetRelativeRotation(FRotator(0.0, 0.0, 0.0));
-	SpringArmComponent_->TargetArmLength = 400.0;
-	SpringArmComponent_->bUsePawnControlRotation = true;
+void ARaceSpectatorPawn::Move(const FInputActionInstance& _Instance)
+{
+	const FVector2D MovingFactor = _Instance.GetValue().Get<FVector2D>();
 
-	CameraComponent_->SetRelativeLocation(FVector(-30.0, 0.0, 0.0));
+	FRotator const ControlRotation = GetControlRotation();
+
+	auto X = FRotationMatrix(ControlRotation).GetScaledAxis(EAxis::X) * MovingFactor.X;
+	auto Y = FRotationMatrix(ControlRotation).GetScaledAxis(EAxis::Y) * MovingFactor.Y;
+	AddMovementInput(X + Y);
+}
+
+void ARaceSpectatorPawn::Look(const FInputActionInstance& _Instance)
+{
+	const FVector2D LookingFactor = _Instance.GetValue().Get<FVector2D>();
+	AddControllerYawInput(LookingFactor.X);
+	AddControllerPitchInput(-LookingFactor.Y);
 }

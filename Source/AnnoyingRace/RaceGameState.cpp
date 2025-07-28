@@ -1,6 +1,7 @@
 #include "RaceGameState.h"
 
 #include "LevelSequenceActor.h"
+#include "RacePlayerState.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -14,8 +15,19 @@ void ARaceGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ARaceGameState, RaceStartTime_);
-	DOREPLIFETIME(ARaceGameState, SequencActor_);
+	DOREPLIFETIME(ARaceGameState, PlayerRankings_);
 }
+
+void ARaceGameState::HandleMatchHasStarted()
+{
+	Super::HandleMatchHasStarted();
+
+	if(HasAuthority())
+	{
+		GetWorldTimerManager().SetTimer(RankingUpdateTimerHandle, this, &ARaceGameState::UpdatePlayerRankings, 0.2f, true);
+	}
+}
+
 
 void ARaceGameState::HandleStartRace()
 {
@@ -24,18 +36,6 @@ void ARaceGameState::HandleStartRace()
 		RaceStartTime_ = GetServerWorldTimeSeconds();
 	}
 }
-
-void ARaceGameState::SetSequenceActor(ALevelSequenceActor* _SequenceActor)
-{
-	SequencActor_ = GetWorld()->SpawnActor<ALevelSequenceActor>();
-	SequencActor_->SetReplicatePlayback(true);
-}
-
-ALevelSequenceActor* ARaceGameState::GetSequenceActor() const
-{
-	return SequencActor_;
-}
-
 
 void ARaceGameState::SetMaxCheckPointCount(uint8 _Count)
 {
@@ -64,4 +64,47 @@ float ARaceGameState::GetRaceElapsedTime() const
 		return GetServerWorldTimeSeconds() - ElapsedTime_;
 	}
 	return 0.f;
+}
+
+const TArray<TObjectPtr<APlayerState>>& ARaceGameState::GetPlayerRankings() const
+{
+	return PlayerRankings_;
+}
+
+
+void ARaceGameState::UpdatePlayerRankings()
+{
+	//This Function Executed On Server Only
+	PlayerRankings_ = PlayerArray;
+
+	PlayerRankings_.Sort([](const APlayerState& _Lhs, const APlayerState& _Rhs)
+		{
+			const auto LhsState = Cast<ARacePlayerState>(&_Lhs);
+			const auto RhsState = Cast<ARacePlayerState>(&_Rhs);
+
+			//존재하지 않는 (탈주 등) 유저는 순위에서 밀림
+			if (!LhsState)
+			{
+				return false;
+			}
+			if (!RhsState)
+			{
+				return true;
+			}
+
+			//Laps가 같으면 진행거리로 판단
+			if (LhsState->GetLaps() == RhsState->GetLaps())
+			{
+				return LhsState->GetTotalDistance() > RhsState->GetTotalDistance();
+			}
+
+			return LhsState->GetLaps() > RhsState->GetLaps();
+		});
+
+	OnRep_PlayerRankings();
+}
+
+void ARaceGameState::OnRep_PlayerRankings()
+{
+	OnPlayerRankingUpdated_.ExecuteIfBound();
 }

@@ -1,7 +1,5 @@
 #include "CharacterData.h"
 
-
-
 TSubclassOf<APlayableCharacter> UCharacterData::GetCharacterClass() const
 {
 	return CharacterClass_;

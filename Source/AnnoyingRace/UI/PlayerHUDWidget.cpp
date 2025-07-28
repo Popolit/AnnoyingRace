@@ -2,17 +2,49 @@
 
 #include "RaceGameState.h"
 #include "RacePlayerState.h"
+#include "RaceRankSlotWidget.h"
+#include "Characters/CharacterData.h"
+#include "Components/CanvasPanel.h"
 #include "Components/TextBlock.h"
+#include "Kismet/GameplayStatics.h"
 
 void UPlayerHUDWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	ARacePlayerState* PS = GetOwningPlayerState<ARacePlayerState>();
-	check(PS);
-
 	ARaceGameState* GS = GetWorld()->GetGameState<ARaceGameState>();
 	check(GS);
+
+	GS->OnPlayerRankingUpdated_.BindUObject(this, &UPlayerHUDWidget::UpdateUserRank);
+
+	//Init LeaderBoard
+	if (ensureMsgf(CP_LeaderBoard_, TEXT("PlayerList Canvas was null")))
+	{
+		CP_LeaderBoard_->ClearChildren();
+
+		const TArray<APlayerState*>& Rankings = GS->GetPlayerRankings();
+		for (uint8 Rank = 0; Rank < Rankings.Num(); Rank++)
+		{
+			APlayerState* PlayerState = Rankings[Rank];
+			ARacePlayerState* RacePlayerState = Cast<ARacePlayerState>(PlayerState);
+			if (ensure(RacePlayerState && SlotWidgetClass_))
+			{
+				URaceRankSlotWidget* SlotWidget = CreateWidget<URaceRankSlotWidget>(this, SlotWidgetClass_);
+				UCharacterData* CharacterData = RacePlayerState->GetCharacterData();
+				if(CharacterData)
+				{
+					SlotWidget->SetImage(CharacterData->GetCharacterIcon());
+				}
+				CP_LeaderBoard_->AddChildToCanvas(SlotWidget);
+				PlayerSlots_.Add(PlayerState, SlotWidget);
+
+				SlotWidget->SetRank(Rank);
+			}
+		}
+	}
+
+	ARacePlayerState* PS = GetOwningPlayerState<ARacePlayerState>();
+	check(PS);
 
 	MaxLap_ = GS->GetMaxLap();
 
@@ -20,12 +52,33 @@ void UPlayerHUDWidget::NativeConstruct()
 	UpdateUserLap(PS->GetLaps());
 }
 
-void UPlayerHUDWidget::UpdateUserRank()
+void UPlayerHUDWidget::UpdateUserRank() const
 {
-	//TODO : Rank 시스템 제작
+	auto GS = Cast<ARaceGameState>(UGameplayStatics::GetGameState(this));
+	check(GS);
+
+	const TArray<TObjectPtr<APlayerState>> Rankings = GS->GetPlayerRankings();
+
+	for(uint8 Rank = 0; Rank < Rankings.Num(); Rank++)
+	{
+		APlayerState* PS = Rankings[Rank];
+
+		if(PS == GetOwningPlayerState())
+		{
+			FFormatNamedArguments Args;
+			Args.Add(TEXT("UserRank"), FText::AsNumber(Rank + 1));
+			Args.Add(TEXT("UserCount"), FText::AsNumber(Rankings.Num()));
+			Txt_UserRank_->SetText(FText::Format(FText::FromString(TEXT("{UserRank} / {UserCount}")), Args));
+		}
+		URaceRankSlotWidget* RankSlot = PlayerSlots_.FindRef(PS);
+		if (ensureMsgf(RankSlot, TEXT("RankSlot from PlayerSlots was nullptr")))
+		{
+			RankSlot->SetRank(Rank);
+		}
+	}
 }
 
-void UPlayerHUDWidget::UpdateUserLap(uint8 _Laps)
+void UPlayerHUDWidget::UpdateUserLap(uint8 _Laps) const
 {
 	FFormatNamedArguments Args;
 	Args.Add(TEXT("CurrentLap"), FText::AsNumber(_Laps));

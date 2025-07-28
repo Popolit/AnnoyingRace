@@ -7,7 +7,7 @@
 
 AHitBox::AHitBox()
 {
-	SetReplicates(true);
+	bReplicates = true;
 }
 
 void AHitBox::BeginPlay()

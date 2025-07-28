@@ -70,7 +70,6 @@ void ARaceGameMode::HandlePlayerDeath(APlayerController* _PC) const
 	ARacePlayerController* PC = Cast<ARacePlayerController>(_PC);
 	check(PC);
 
-	PC->Client_DisableCharacterInput();
 	PC->Client_ShowCharacterDiedWidget();
 }
 
@@ -135,6 +134,10 @@ void ARaceGameMode::SpawnNewCharacter(APlayerController* _PC)
 
 	ACharacter* NextCharacter = GetWorld()->SpawnActor<ACharacter>(NextCharacterClass, SpawnTransform, SpawnParams);
 	check(NextCharacter);
+	if(_PC->GetPawn())
+	{
+		_PC->GetPawn()->Destroy();
+	}
 	_PC->Possess(NextCharacter);
 }
 

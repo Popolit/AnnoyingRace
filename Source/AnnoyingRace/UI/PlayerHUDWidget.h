@@ -16,9 +16,9 @@ protected:
 	virtual void NativeConstruct() override;
 
 public:
-	void UpdateUserRank();
+	void UpdateUserRank() const;
 
-	void UpdateUserLap(uint8 _Laps);
+	void UpdateUserLap(uint8 _Laps) const;
 
 private:
 	UPROPERTY(meta = (BindWidget))
@@ -28,7 +28,12 @@ private:
 		TObjectPtr<UTextBlock> Txt_UserLap_;
 
 	UPROPERTY(meta = (BindWidget))
-		TObjectPtr<class UVerticalBox> VB_PlayerList_;
+		TObjectPtr<class UCanvasPanel> CP_LeaderBoard_;
+
+	UPROPERTY(EditDefaultsOnly)
+		TSubclassOf<class URaceRankSlotWidget> SlotWidgetClass_;
+
+	TMap<TObjectKey<APlayerState>, TObjectPtr<URaceRankSlotWidget>> PlayerSlots_;
 
 private:
 	uint8 MaxLap_;

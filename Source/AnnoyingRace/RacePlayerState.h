@@ -40,7 +40,8 @@ private:
 		void OnRep_Laps();
 
 private:
-	TObjectPtr<class UCharacterData> CharacterData_;
+	UPROPERTY(Replicated)
+		TObjectPtr<UCharacterData> CharacterData_;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Laps)
 		uint8 Laps_;

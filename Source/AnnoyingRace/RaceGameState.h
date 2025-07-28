@@ -4,6 +4,8 @@
 #include "GameFramework/GameState.h"
 #include "RaceGameState.generated.h"
 
+DECLARE_DELEGATE(FOnPlayerRankingUpdated)
+
 /**
  * Race Game State
  */
@@ -16,11 +18,11 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+protected:
+	virtual void HandleMatchHasStarted() override;
+
+public:
 	void HandleStartRace();
-
-	void SetSequenceActor(class ALevelSequenceActor* _SequenceActor);
-
-	ALevelSequenceActor* GetSequenceActor() const;
 
 	void SetMaxCheckPointCount(uint8 _Count);
 
@@ -32,10 +34,19 @@ public:
 
 	float GetRaceElapsedTime() const;
 
-private:
-	UPROPERTY(Replicated)
-		TObjectPtr<ALevelSequenceActor> SequencActor_;
+	const TArray<TObjectPtr<APlayerState>>& GetPlayerRankings() const;
 
+private:
+	void UpdatePlayerRankings();
+
+	UFUNCTION()
+		void OnRep_PlayerRankings();
+
+
+public:
+	FOnPlayerRankingUpdated OnPlayerRankingUpdated_;
+
+private:
 	uint8 MaxLap_;
 
 	uint8 MaxCheckPointCount_;
@@ -44,4 +55,9 @@ private:
 		float RaceStartTime_;
 
 	long double ElapsedTime_;
+
+	UPROPERTY(ReplicatedUsing = OnRep_PlayerRankings)
+		TArray<TObjectPtr<APlayerState>> PlayerRankings_;
+
+	FTimerHandle RankingUpdateTimerHandle;
 };

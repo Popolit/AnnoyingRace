@@ -14,7 +14,7 @@ void UDrawCharacterWidget::SetWidget(const UCharacterData* _CharacterData)
 
 void UDrawCharacterWidget::ShowWidget()
 {
-	SetVisibility(ESlateVisibility::Visible);
+	SetVisibility(ESlateVisibility::HitTestInvisible);
 	PlayAnimation(Anim_FadeInOut_);
 }
 

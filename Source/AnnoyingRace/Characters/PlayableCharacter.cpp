@@ -7,9 +7,9 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "RacePlayerController.h"
 #include "Components/SkillComponent.h"
 #include "Components/StatusComponent.h"
-#include "GameFramework/SpectatorPawn.h"
 
 
 APlayableCharacter::APlayableCharacter()
@@ -96,10 +96,13 @@ void APlayableCharacter::ProcessDeath()
 {
 	if (HasAuthority())
 	{
+		ARacePlayerController* PC = Cast <ARacePlayerController >(GetController());
+		check(PC);
+
 		if (ARaceGameMode* GM = GetWorld()->GetAuthGameMode<ARaceGameMode>())
 		{
-			APlayerController* PC = Cast <APlayerController >(GetController());
-			//GM->HandlePlayerDeath(PC);
+			PC->SetSpectatorMode(CameraComponent_->GetComponentTransform());
+			GM->HandlePlayerDeath(PC);
 		}
 		Multicast_ProcessDeath();
 	}
@@ -124,13 +127,9 @@ void APlayableCharacter::Multicast_ProcessDeath_Implementation()
 	MeshComponent->SetSimulatePhysics(true);
 	SetLifeSpan(LifeSpanAfterDeath_);
 
-	if(APlayerController* PC = Cast<APlayerController>(GetController()))
+	if(ARacePlayerController* PC = Cast<ARacePlayerController>(GetController()))
 	{
-		if(APawn* SpectatorPawn = PC->GetSpectatorPawn())
-		{
-			SpectatorPawn->SetActorTransform(CameraComponent_->GetComponentTransform());
-			PC->Possess(SpectatorPawn);
-		}
+		PC->SetSpectatorMode(CameraComponent_->GetComponentTransform());
 		
 	}
 	OnCharacterDied_.ExecuteIfBound(this);
