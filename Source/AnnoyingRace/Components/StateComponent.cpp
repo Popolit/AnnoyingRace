@@ -4,8 +4,6 @@
 #include "Characters/States/State_Hit.h"
 #include "Characters/States/State_Skill.h"
 #include "Characters/States/State_Death.h"
-
-#include "InputAction.h"
 #include "GameFramework/Character.h"
 
 UStateComponent::UStateComponent()
@@ -33,7 +31,7 @@ bool UStateComponent::CheckCurrentState(EState _State)
 
 void UStateComponent::SetState(EState _NewState)
 {
-	if(false == CurrentState_.IsNull())
+	if(CurrentState_)
 	{
 		CurrentState_->Exit(this);
 	}
@@ -43,7 +41,7 @@ void UStateComponent::SetState(EState _NewState)
 
 void UStateComponent::Move(const FInputActionInstance& _Instance)
 {
-	if (false == CurrentState_.IsNull())
+	if (CurrentState_)
 	{
 		CurrentState_->Move(_Instance, Cast<ACharacter>(GetOuter()));
 	}
@@ -51,7 +49,7 @@ void UStateComponent::Move(const FInputActionInstance& _Instance)
 
 void UStateComponent::Look(const FInputActionInstance& _Instance)
 {
-	if (false == CurrentState_.IsNull())
+	if (CurrentState_)
 	{
 		CurrentState_->Look(_Instance, Cast<ACharacter>(GetOuter()));
 	}
@@ -59,7 +57,7 @@ void UStateComponent::Look(const FInputActionInstance& _Instance)
 
 void UStateComponent::SkillButtonPushed(const FInputActionInstance& _Instance)
 {
-	if (false == CurrentState_.IsNull())
+	if (CurrentState_)
 	{
 		CurrentState_->SkillButtonPushed(_Instance, Cast<ACharacter>(GetOuter()));
 	}
@@ -68,7 +66,7 @@ void UStateComponent::SkillButtonPushed(const FInputActionInstance& _Instance)
 void UStateComponent::TakeDamage(ACharacter* _Character, float _DamageAmount, FDamageEvent const& _DamageEvent, AController* _EventInstigator,
 	AActor* _DamageCauser)
 {
-	if(false == CurrentState_.IsNull())
+	if(CurrentState_)
 	{
 		CurrentState_->TakeDamage(_Character, _DamageAmount, _DamageEvent, _EventInstigator, _DamageCauser);
 	}

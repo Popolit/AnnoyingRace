@@ -23,9 +23,14 @@ TObjectPtr<UCharacterData> ARacePlayerState::GetCharacterData() const
 	return CharacterData_;
 }
 
+//Executed On Server Only
 void ARacePlayerState::SetCharacterData(UCharacterData* _CharacterData)
 {
-	CharacterData_ = _CharacterData;
+	if (HasAuthority())
+	{
+		CharacterData_ = _CharacterData;
+		OnRep_CharacterData();
+	}
 }
 
 uint8 ARacePlayerState::GetLaps() const
@@ -33,6 +38,7 @@ uint8 ARacePlayerState::GetLaps() const
 	return Laps_;
 }
 
+//Executed On Server Only
 void ARacePlayerState::IncreaseLap()
 {
 	if(HasAuthority())
@@ -60,6 +66,11 @@ float ARacePlayerState::GetTotalDistance() const
 void ARacePlayerState::SetTotalDistance(float _Distance)
 {
 	Distance_ = _Distance;
+}
+
+void ARacePlayerState::OnRep_CharacterData()
+{
+	OnCharacterDataSet_.ExecuteIfBound(CharacterData_);
 }
 
 void ARacePlayerState::OnRep_Laps()

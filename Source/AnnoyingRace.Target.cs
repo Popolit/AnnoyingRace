@@ -8,8 +8,8 @@ public class AnnoyingRaceTarget : TargetRules
 	public AnnoyingRaceTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Game;
-		DefaultBuildSettings = BuildSettingsVersion.V2;
+		DefaultBuildSettings = BuildSettingsVersion.V5;
 
-		ExtraModuleNames.AddRange( new string[] { "AnnoyingRace" } );
+        ExtraModuleNames.AddRange( new string[] { "AnnoyingRace" } );
 	}
 }

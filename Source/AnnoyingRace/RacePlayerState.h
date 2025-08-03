@@ -5,6 +5,7 @@
 #include "RacePlayerState.generated.h"
 
 DECLARE_DELEGATE_OneParam(FOnLapsChanged, uint8)
+DECLARE_DELEGATE_OneParam(FOnCharacterDataSet, const class UCharacterData*)
 
 /**
  * Race Player State
@@ -19,7 +20,7 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	TObjectPtr<class UCharacterData> GetCharacterData() const;
+	TObjectPtr<UCharacterData> GetCharacterData() const;
 
 	void SetCharacterData(UCharacterData* _CharacterData);
 
@@ -37,10 +38,13 @@ public:
 
 private:
 	UFUNCTION()
+		void OnRep_CharacterData();
+
+	UFUNCTION()
 		void OnRep_Laps();
 
 private:
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_CharacterData)
 		TObjectPtr<UCharacterData> CharacterData_;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Laps)
@@ -51,5 +55,7 @@ private:
 	float Distance_;
 
 public:
+	FOnCharacterDataSet OnCharacterDataSet_;
+
 	FOnLapsChanged OnLapsChanged_;
 };

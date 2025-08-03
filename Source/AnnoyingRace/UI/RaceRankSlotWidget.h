@@ -13,11 +13,16 @@ class ANNOYINGRACE_API URaceRankSlotWidget : public UUserWidget
 	GENERATED_BODY()
 
 protected:
+	virtual void NativeConstruct() override;
+
 	virtual void NativeTick(const FGeometry& _MyGeometry, float _InDeltaTime) override;
 
 public:
+	void SetSlotFromCharacterData(const class UCharacterData* _CharacterData);
+
 	void SetRank(uint8 _Rank);
 
+private:
 	void SetImage(TSoftObjectPtr<UTexture2D> _Image);
 
 	void SetText(const FString& _Text);
@@ -30,4 +35,5 @@ private:
 
 	float TargetYPosition_;
 	float CurrentYPosition_;
+	float SizeY_;
 };

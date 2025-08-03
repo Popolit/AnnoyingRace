@@ -21,13 +21,12 @@ protected:
 	virtual FReply NativeOnKeyDown(const FGeometry& _InGeometry, const FKeyEvent& _InKeyEvent) override;
 
 private:
-	UFUNCTION()
-		void ResumeGame();
-
-	UFUNCTION()
-		void VisibilityChanged(ESlateVisibility _Visibility);
-
-private:
 	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<class UButton> Btn_Resume_;
+
+	UPROPERTY(meta = (BindWidget))
+		TObjectPtr<UButton> Btn_Option_;
+
+	UPROPERTY(meta = (BindWidget))
+		TObjectPtr<UButton> Btn_Exit_;
 };

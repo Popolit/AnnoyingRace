@@ -1,6 +1,5 @@
 #include "RaceGameMode.h"
 
-#include "LevelSequenceActor.h"
 #include "RaceGameState.h"
 #include "RacePlayerState.h"
 #include "RacePlayerController.h"
@@ -8,6 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "World/TrackSplineActor.h"
 #include "Characters/CharacterData.h"
+#include "World/RaceWorldSettings.h"
 
 ARaceGameMode::ARaceGameMode()
 {
@@ -39,12 +39,21 @@ void ARaceGameMode::StartMatch()
 	ARaceGameState* GS = GetGameState<ARaceGameState>();
 	check(GS);
 
-	//ÀÎÆ®·Î ¿¬Ãâ Àç»ı
+	auto WorldSettings = Cast<ARaceWorldSettings>(GetWorldSettings());
+
 	for(auto Player : GS->PlayerArray)
 	{
 		auto PC = Cast<ARacePlayerController>(Player->GetPlayerController());
 		check(PC);
+
+		//ì¸íŠ¸ë¡œ ì—°ì¶œ ì¬ìƒ
 		PC->PlaySequence("Intro");
+
+		//BGM ì¬ìƒ
+		if (ensureMsgf(WorldSettings && WorldSettings->WorldBGM_, TEXT("World Settings' BGM was not set")))
+		{
+			PC->Client_PlaySound2D(WorldSettings->WorldBGM_);
+		}
 	}
 }
 
@@ -59,7 +68,7 @@ void ARaceGameMode::PostLogin(APlayerController* _NewPlayer)
 
 bool ARaceGameMode::ReadyToStartMatch_Implementation()
 {
-	//TODO : ¸ğµç À¯ÀúÀÇ Á¢¼ÓÀ» È®ÀÎÇÏ´Â ·ÎÁ÷À¸·Î º¯°æ
+	//TODO : ëª¨ë“  ìœ ì €ì˜ ì ‘ì†ì„ í™•ì¸í•˜ëŠ” ë¡œì§ìœ¼ë¡œ ë³€ê²½
 	return 2 <= NumPlayers;
 }
 
@@ -110,9 +119,8 @@ void ARaceGameMode::SpawnNewCharacter(APlayerController* _PC)
 	SpawnParams.Owner = _PC;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-	//·¹ÀÌ½º°¡ ¾ÆÁ÷ ½ÃÀÛÇÏÁö ¾ÊÀº Ã¹ Spawn
-	//PlayerStart¿¡ Spawn, ·¹ÀÌ½º ÁØºñ°¡ µÈ ÇÃ·¹ÀÌ¾î·Î °£ÁÖÇÔ.
-	if (false == bRaceStarted_)
+	//ë ˆì´ìŠ¤ê°€ ì•„ì§ ì‹œì‘í•˜ì§€ ì•Šì€ ì²« Spawn
+	//PlayerStartì— Spawn, ë ˆì´ìŠ¤ ì¤€ë¹„ê°€ ëœ í”Œë ˆì´ì–´ë¡œ ê°„ì£¼í•¨.	if (false == bRaceStarted_)
 	{
 		const AActor* PlayerStart = FindPlayerStart(_PC);
 		if (PlayerStart)
@@ -155,12 +163,12 @@ void ARaceGameMode::HandleCheckPointPassed(uint8 _CheckPointIndex, APlayerContro
 	}
 
 
-	//ÇÑ¹ÙÄû¸¦ µ¹¾Æ Laps Áõ°¡
+	//í•œë°”í€´ë¥¼ ëŒì•„ Laps ì¦ê°€
 	if(_CheckPointIndex == 0)
 	{
 		if (GetGameState<ARaceGameState>()->GetMaxLap() <= PS->GetLaps())
 		{
-			//¿ÏÁÖ Ã³¸® ÄÚµå
+			//ì™„ì£¼ ì²˜ë¦¬ ì½”ë“œ
 			return;
 		}
 		PS->IncreaseLap();
@@ -193,7 +201,7 @@ void ARaceGameMode::StartRaceCountDown()
 
 TObjectPtr<UCharacterData> ARaceGameMode::PopNextCharacter()
 {
-	//´ÙÀ½ Ä³¸¯ÅÍ Å¬·¡½º ¼±ÅÃ
+	//ë‹¤ìŒ ìºë¦­í„° í´ë˜ìŠ¤ ì„ íƒ
 	const TObjectPtr<UCharacterData> CharacterData = *CharacterQueue_.Peek();
 	CharacterQueue_.Pop();
 

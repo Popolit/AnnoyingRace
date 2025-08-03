@@ -2,6 +2,7 @@
 
 #include "Components/ShapeComponent.h"
 #include "Components/SkillComponent.h"
+#include "Engine/DamageEvents.h"
 #include "Kismet/GameplayStatics.h"
 
 

@@ -23,30 +23,40 @@ void UPlayerHUDWidget::NativeConstruct()
 		CP_LeaderBoard_->ClearChildren();
 
 		const TArray<APlayerState*>& Rankings = GS->GetPlayerRankings();
+		URaceRankSlotWidget* SlotWidget;
 		for (uint8 Rank = 0; Rank < Rankings.Num(); Rank++)
 		{
 			APlayerState* PlayerState = Rankings[Rank];
 			ARacePlayerState* RacePlayerState = Cast<ARacePlayerState>(PlayerState);
 			if (ensure(RacePlayerState && SlotWidgetClass_))
 			{
-				URaceRankSlotWidget* SlotWidget = CreateWidget<URaceRankSlotWidget>(this, SlotWidgetClass_);
+				SlotWidget = CreateWidget<URaceRankSlotWidget>(this, SlotWidgetClass_);
 				UCharacterData* CharacterData = RacePlayerState->GetCharacterData();
+				RacePlayerState->OnCharacterDataSet_.BindUObject(SlotWidget, &URaceRankSlotWidget::SetSlotFromCharacterData);
 				if(CharacterData)
 				{
-					SlotWidget->SetImage(CharacterData->GetCharacterIcon());
+					SlotWidget->SetSlotFromCharacterData(CharacterData);
 				}
 				CP_LeaderBoard_->AddChildToCanvas(SlotWidget);
 				PlayerSlots_.Add(PlayerState, SlotWidget);
-
 				SlotWidget->SetRank(Rank);
+
+				if (PlayerState == GetOwningPlayerState())
+				{
+					FFormatNamedArguments Args;
+					Args.Add(TEXT("UserRank"), FText::AsNumber(Rank + 1));
+					Args.Add(TEXT("UserCount"), FText::AsNumber(Rankings.Num()));
+					Txt_UserRank_->SetText(FText::Format(FText::FromString(TEXT("{UserRank} / {UserCount}")), Args));
+
+				}
 			}
 		}
 	}
 
+	MaxLap_ = GS->GetMaxLap();
+
 	ARacePlayerState* PS = GetOwningPlayerState<ARacePlayerState>();
 	check(PS);
-
-	MaxLap_ = GS->GetMaxLap();
 
 	PS->OnLapsChanged_.BindUObject(this, &UPlayerHUDWidget::UpdateUserLap);
 	UpdateUserLap(PS->GetLaps());

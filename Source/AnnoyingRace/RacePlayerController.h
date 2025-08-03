@@ -25,9 +25,36 @@ protected:
 public:
 	void PlaySequence(const FName& _SequenceName);
 
-	//Transform¿¡¼­ °üÀüÀÚ ¸ğµå
+	UFUNCTION(Client, Reliable)
+	void Client_PlaySound2D(class USoundCue* _Sound);
+
+	//Transformì—ì„œ ê´€ì „ì ëª¨ë“œ ì‹œì‘
 	void SetSpectatorMode(const FTransform& _TransformToSpectate);
 
+	//UIê´€ë ¨ í•¨ìˆ˜ë“¤
+public:
+	void OpenMainMenu();
+
+	UFUNCTION()
+		void ExitGame();
+
+	UFUNCTION()
+		void CloseMainMenu();
+
+	UFUNCTION()
+		void OpenOptionMenu();
+
+	UFUNCTION()
+		void CloseOptionMenu();
+
+	UFUNCTION()
+		void OpenConfirmExitGameDialog();
+
+	UFUNCTION()
+		void CloseConfirmExitGameDialog();
+
+	//Client í•¨ìˆ˜ë“¤
+public:
 	UFUNCTION(Client, Reliable)
 		void Client_EnableCharacterInput();
 
@@ -44,8 +71,6 @@ public:
 		void Client_ShowCharacterDrawResult(const class UCharacterData* _DrawnCharacterData);
 
 private:
-	void OpenMenu();
-
 	UFUNCTION(Server, Reliable)
 		void Server_RequestDrawCharacter();
 
@@ -59,6 +84,10 @@ private:
 	void OnCharacterDiedAnimationFinished();
 
 	void UpdateDistanceAlongSpline();
+
+	void OpenInteractableWidget(UUserWidget* _Widget);
+
+	void CloseInteractableWidget(UUserWidget* _Widget);
 
 private:
 	UPROPERTY(EditDefaultsOnly)
@@ -76,6 +105,12 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 		TSubclassOf<UUserWidget> RaceMenuWidgetClass_;
 
+	UPROPERTY(EditDefaultsOnly)
+		TSubclassOf<UUserWidget> OptionWidgetClass_;
+
+	UPROPERTY(EditDefaultsOnly)
+		TSubclassOf<UUserWidget> ConfirmExitGameWidgetClass_;
+
 	UPROPERTY()
 		TObjectPtr<UCountDownWidget> CountdownWidget_;
 
@@ -91,15 +126,21 @@ private:
 	UPROPERTY()
 		TObjectPtr<UUserWidget> RaceMenuWidget_;
 
+	UPROPERTY()
+		TObjectPtr<UUserWidget> OptionWidget_;
+
+	UPROPERTY()
+		TObjectPtr<UUserWidget> ConfirmExitGameWidget_;
+
 private:
 	UPROPERTY()
 		TObjectPtr<class ATrackSplineActor> TrackSplineActor_;
 
-	//Ä³¸¯ÅÍ ÀÎÇ²
+	//ìºë¦­í„° ì¸í’‹
 	UPROPERTY(EditDefaultsOnly, Category = Input)
-		TObjectPtr<class UInputMappingContext> IMC_Character_;
+	TObjectPtr<class UInputMappingContext> IMC_Character_;
 
-	//°ø¿ë ÀÎÇ² (Ex : ¸Ş´º ¿­±â µî)
+	//ê³µìš© ì¸í’‹ (Ex : ë©”ë‰´ ì—´ê¸° ë“±)
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 		TObjectPtr<class UInputMappingContext> IMC_Default_;
 

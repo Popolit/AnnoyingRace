@@ -1,7 +1,17 @@
 #include "RaceRankSlotWidget.h"
 
+#include "Characters/CharacterData.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
+
+
+void URaceRankSlotWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+	ForceLayoutPrepass();
+
+	SizeY_ = GetDesiredSize().Y;
+}
 
 void URaceRankSlotWidget::NativeTick(const FGeometry& _MyGeometry, float _InDeltaTime)
 {
@@ -18,9 +28,14 @@ void URaceRankSlotWidget::NativeTick(const FGeometry& _MyGeometry, float _InDelt
 	}
 }
 
+void URaceRankSlotWidget::SetSlotFromCharacterData(const UCharacterData* _CharacterData)
+{
+	SetImage(_CharacterData->GetCharacterIcon());
+}
+
 void URaceRankSlotWidget::SetRank(uint8 _Rank)
 {
-	TargetYPosition_ = _Rank * GetDesiredSize().Y;
+	TargetYPosition_ = _Rank * SizeY_;
 }
 
 
@@ -31,5 +46,5 @@ void URaceRankSlotWidget::SetImage(TSoftObjectPtr<UTexture2D> _Image)
 
 void URaceRankSlotWidget::SetText(const FString& _Text)
 {
-	//TODO : UserID¸¦ ¼ÂÆÃ
+	//TODO : UserIDë¥¼ ì…‹íŒ…
 }

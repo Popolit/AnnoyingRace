@@ -1,28 +1,24 @@
 #include "RaceMenuWidget.h"
 
+#include "RacePlayerController.h"
+#include "OptionWidget.h"
 #include "Components/Button.h"
 
 URaceMenuWidget::URaceMenuWidget(const FObjectInitializer& _ObjectInitializer)
 	: Super(_ObjectInitializer)
 {
-	bIsFocusable = true;
+	SetIsFocusable(true);
 }
 
 void URaceMenuWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	APlayerController* PC = GetOwningPlayer();
-	if(ensure(PC))
-	{
-		PC->bShowMouseCursor = true;
+	ARacePlayerController* PC = GetOwningPlayer<ARacePlayerController>();
+	check(PC);
 
-		FInputModeUIOnly InputMode;
-		InputMode.SetWidgetToFocus(TakeWidget());
-		PC->SetInputMode(InputMode);
-	}
-
-	Btn_Resume_->OnClicked.AddDynamic(this, &URaceMenuWidget::ResumeGame);
-	OnNativeVisibilityChanged.AddUObject(this, &URaceMenuWidget::VisibilityChanged);
+	Btn_Resume_->OnClicked.AddDynamic(PC, &ARacePlayerController::CloseMainMenu);
+	Btn_Option_->OnClicked.AddDynamic(PC, &ARacePlayerController::OpenOptionMenu);
+	Btn_Exit_->OnClicked.AddDynamic(PC, &ARacePlayerController::OpenConfirmExitGameDialog);
 }
 
 FReply URaceMenuWidget::NativeOnKeyDown(const FGeometry& _InGeometry, const FKeyEvent& _InKeyEvent)
@@ -30,36 +26,11 @@ FReply URaceMenuWidget::NativeOnKeyDown(const FGeometry& _InGeometry, const FKey
 	//ESC
 	if (_InKeyEvent.GetKey() == EKeys::Escape)
 	{
-		SetVisibility(ESlateVisibility::Collapsed);
+		if (auto* PC = GetOwningPlayer<ARacePlayerController>())
+		{
+			PC->CloseMainMenu();
+		}
 		return FReply::Handled();
 	}
 	return Super::NativeOnKeyDown(_InGeometry, _InKeyEvent);
-}
-
-void URaceMenuWidget::ResumeGame()
-{
-	SetVisibility(ESlateVisibility::Collapsed);
-}
-
-void URaceMenuWidget::VisibilityChanged(ESlateVisibility _Visibility)
-{
-	APlayerController* PC = GetOwningPlayer();
-	if(nullptr == PC)
-	{
-		ensure(false);
-		return; 
-	}
-
-	if(_Visibility == ESlateVisibility::Visible)
-	{
-		FInputModeUIOnly InputMode;
-		InputMode.SetWidgetToFocus(TakeWidget());
-		PC->SetInputMode(InputMode);
-		PC->bShowMouseCursor = true;
-	}
-	else
-	{
-		PC->SetInputMode(FInputModeGameOnly());
-		PC->bShowMouseCursor = false;
-	}
 }
