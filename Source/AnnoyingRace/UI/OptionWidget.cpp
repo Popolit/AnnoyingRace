@@ -1,6 +1,5 @@
 #include "OptionWidget.h"
 
-#include "RacePlayerController.h"
 #include "Components/Button.h"
 #include "Components/WidgetSwitcher.h"
 
@@ -20,15 +19,13 @@ void UOptionWidget::NativeConstruct()
 	OptionButtons_.Add(Btn_Control_);
 	SelectedNum_ = 0;
 	WST_Options_->SetActiveWidgetIndex(SelectedNum_);
-
-	ARacePlayerController* PC = GetOwningPlayer<ARacePlayerController>();
-	check(PC);
+	OnOptionSelected(0);
 
 	Btn_Graphics_->OnClicked.AddDynamic(this, &UOptionWidget::OnClickedGraphicsBtn);
 	Btn_Audio_->OnClicked.AddDynamic(this, &UOptionWidget::OnClickedAudioBtn);
 	Btn_Language_->OnClicked.AddDynamic(this, &UOptionWidget::OnClickedLanguageBtn);
 	Btn_Control_->OnClicked.AddDynamic(this, &UOptionWidget::OnClickedControlBtn);
-	Btn_Back_->OnClicked.AddDynamic(PC, &ARacePlayerController::CloseOptionMenu);
+	Btn_Back_->OnClicked.AddDynamic(this, &UOptionWidget::OnClickedBackBtn);
 }
 
 void UOptionWidget::OnClickedGraphicsBtn()
@@ -51,6 +48,11 @@ void UOptionWidget::OnClickedControlBtn()
 	OnOptionSelected(3);
 }
 
+void UOptionWidget::OnClickedBackBtn()
+{
+	OnBackBtnClicked_.ExecuteIfBound();
+}
+
 void UOptionWidget::OnOptionSelected(uint8 _SelectedNum)
 {
 	if(false == OptionButtons_.IsValidIndex(SelectedNum_) || false == OptionButtons_.IsValidIndex(_SelectedNum))
@@ -63,7 +65,7 @@ void UOptionWidget::OnOptionSelected(uint8 _SelectedNum)
 	OptionButtons_[SelectedNum_]->SetColorAndOpacity(FLinearColor(255, 255, 255, 1.0));
 
 	SelectedNum_ = _SelectedNum;
-	OptionButtons_[SelectedNum_]->SetColorAndOpacity(FLinearColor(0, 0, 0, 0.5));
+	OptionButtons_[SelectedNum_]->SetColorAndOpacity(FLinearColor(255, 0, 0, 1.0));
 
 	WST_Options_->SetActiveWidgetIndex(SelectedNum_);
 }

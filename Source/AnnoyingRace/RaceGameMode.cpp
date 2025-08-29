@@ -1,5 +1,6 @@
 #include "RaceGameMode.h"
 
+#include "RaceGameInstance.h"
 #include "RaceGameState.h"
 #include "RacePlayerState.h"
 #include "RacePlayerController.h"
@@ -14,7 +15,6 @@ ARaceGameMode::ARaceGameMode()
 	GameStateClass = ARaceGameState::StaticClass();
 	PlayerStateClass = ARacePlayerState::StaticClass();
 	DefaultPawnClass = nullptr;
-	UnReadiedPlayerCount_ = 0;
 }
 
 void ARaceGameMode::StartPlay()
@@ -68,11 +68,17 @@ void ARaceGameMode::PostLogin(APlayerController* _NewPlayer)
 
 bool ARaceGameMode::ReadyToStartMatch_Implementation()
 {
-	//TODO : 모든 유저의 접속을 확인하는 로직으로 변경
-	return 2 <= NumPlayers;
+	Super::ReadyToStartMatch_Implementation();
+
+	URaceGameInstance* GI = GetGameInstance<URaceGameInstance>();
+	if (GI)
+	{
+		const int32 ExpectedPlayerCount = GI->GetRacePlayerCount();
+		return 0 < ExpectedPlayerCount && ExpectedPlayerCount == GetNumPlayers();
+	}
+
+	return false;
 }
-
-
 
 void ARaceGameMode::HandlePlayerDeath(APlayerController* _PC) const
 {
@@ -120,7 +126,8 @@ void ARaceGameMode::SpawnNewCharacter(APlayerController* _PC)
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
 	//레이스가 아직 시작하지 않은 첫 Spawn
-	//PlayerStart에 Spawn, 레이스 준비가 된 플레이어로 간주함.	if (false == bRaceStarted_)
+	//PlayerStart에 Spawn, 레이스 준비가 된 플레이어로 간주함.
+	if (false == bRaceStarted_)
 	{
 		const AActor* PlayerStart = FindPlayerStart(_PC);
 		if (PlayerStart)

@@ -21,6 +21,9 @@ void UOption_AudioWidget::NativeConstruct()
 		Sld_Master_->SetValue(Settings->MasterVolume);
 		Sld_SFX_->SetValue(Settings->SFXVolume);
 		Sld_BGM_->SetValue(Settings->BGMVolume);
+		UGameplayStatics::SetSoundMixClassOverride(this, GlobalSoundMix, MasterSoundClass, Settings->MasterVolume);
+		UGameplayStatics::SetSoundMixClassOverride(this, GlobalSoundMix, SFXSoundClass, Settings->SFXVolume);
+		UGameplayStatics::SetSoundMixClassOverride(this, GlobalSoundMix, BGMSoundClass, Settings->BGMVolume);
 		Txt_MasterPercent_->SetText(FText::AsNumber(FMath::RoundToInt(Settings->MasterVolume * 100)));
 		Txt_SFXPercent_->SetText(FText::AsNumber(FMath::RoundToInt(Settings->SFXVolume * 100)));
 		Txt_BGMPercent_->SetText(FText::AsNumber(FMath::RoundToInt(Settings->BGMVolume * 100)));

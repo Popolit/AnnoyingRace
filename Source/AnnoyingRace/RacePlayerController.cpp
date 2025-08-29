@@ -14,13 +14,10 @@
 #include "UI/CharacterDiedWidget.h"
 #include "UI/DrawCharacterWidget.h"
 #include "UI/CountDownWidget.h"
+#include "UI/ExitDialogueWidget.h"
+#include "UI/OptionWidget.h"
 #include "UserSettings/EnhancedInputUserSettings.h"
 #include "World/TrackSplineActor.h"
-
-ARacePlayerController::ARacePlayerController()
-{
-	InputComponent = CreateDefaultSubobject<UEnhancedInputComponent>("InputComponent");
-}
 
 void ARacePlayerController::OnPossess(APawn* _Pawn)
 {
@@ -55,20 +52,25 @@ void ARacePlayerController::OnUnPossess()
 
 void ARacePlayerController::SetupInputComponent()
 {
-	auto Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
-	if (Subsystem)
-	{
-		Subsystem->AddMappingContext(IMC_Default_, 0);
-
-		if (auto UserSettings = Subsystem->GetUserSettings())
-		{
-			UserSettings->RegisterInputMappingContext(IMC_Character_);
-		}
-	}
+	Super::SetupInputComponent();
+	
 	auto IC = Cast<UEnhancedInputComponent>(InputComponent);
-	if (ensureMsgf(IA_ToggleMenu_, TEXT("%s's IA_ToggleMenu_ was nullptr"), *GetName()))
+	if (ensureMsgf(IC, TEXT("RacePC's InputComponent was nullptr")))
 	{
-		IC->BindAction(IA_ToggleMenu_, ETriggerEvent::Triggered, this, &ARacePlayerController::OpenMainMenu);
+		auto Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+		if (Subsystem)
+		{
+			Subsystem->AddMappingContext(IMC_Default_, 0);
+
+			if (auto UserSettings = Subsystem->GetUserSettings())
+			{
+				UserSettings->RegisterInputMappingContext(IMC_Character_);
+			}
+		}
+		if (ensureMsgf(IA_ToggleMenu_, TEXT("%s's IA_ToggleMenu_ was nullptr"), *GetName()))
+		{
+			IC->BindAction(IA_ToggleMenu_, ETriggerEvent::Triggered, this, &ARacePlayerController::OpenMainMenu);
+		}
 	}
 }
 
@@ -216,17 +218,32 @@ void ARacePlayerController::OpenOptionMenu()
 {
 	if(nullptr == OptionWidget_ && ensureMsgf(OptionWidgetClass_, TEXT("WidgetClass was null")))
 	{
-		OptionWidget_ = CreateWidget(this, OptionWidgetClass_);
-		OptionWidget_->AddToViewport(30);
+		OptionWidget_ = CreateWidget<UOptionWidget>(this, OptionWidgetClass_);
 	}
 
-	//Load UserSettings
-	auto UserSettings = GEngine->GetGameUserSettings();
+	if (ensureMsgf(OptionWidget_, TEXT("Option Widget was nullptr")))
 	{
-		UserSettings->LoadSettings();
+		OptionWidget_->OnBackBtnClicked_.BindUObject(this, &ARacePlayerController::CloseOptionMenu);
+		OptionWidget_->AddToViewport(30);
+		CloseMainMenu();
+		OpenInteractableWidget(OptionWidget_);
 	}
-	CloseMainMenu();
-	OpenInteractableWidget(OptionWidget_);
+}
+
+void ARacePlayerController::OpenExitDialogue()
+{
+	if(nullptr == ExitDialogueWidget_ && ensureMsgf(ExitDialogueWidgetClass_, TEXT("WidgetClass was null")))
+	{
+		ExitDialogueWidget_ = CreateWidget<UExitDialogueWidget>(this, ExitDialogueWidgetClass_);
+	}
+	if (ensureMsgf(ExitDialogueWidget_, TEXT("Exit Widget was nullptr")))
+	{
+		ExitDialogueWidget_->OnYesBtnClicked_.BindUObject(this, &ARacePlayerController::ExitGame);
+		ExitDialogueWidget_->OnNoBtnClicked_.BindUObject(this, &ARacePlayerController::CloseExitDialogue);
+		ExitDialogueWidget_->AddToViewport(30);
+		CloseMainMenu();
+		OpenInteractableWidget(ExitDialogueWidget_);
+	}
 }
 
 void ARacePlayerController::CloseOptionMenu()
@@ -241,20 +258,9 @@ void ARacePlayerController::CloseOptionMenu()
 	}
 }
 
-void ARacePlayerController::OpenConfirmExitGameDialog()
+void ARacePlayerController::CloseExitDialogue()
 {
-	if(nullptr == ConfirmExitGameWidget_ && ensureMsgf(ConfirmExitGameWidgetClass_, TEXT("WidgetClass was null")))
-	{
-		ConfirmExitGameWidget_ = CreateWidget(this, ConfirmExitGameWidgetClass_);
-		ConfirmExitGameWidget_->AddToViewport(30);
-	}
-	CloseMainMenu();
-	OpenInteractableWidget(ConfirmExitGameWidget_);
-}
-
-void ARacePlayerController::CloseConfirmExitGameDialog()
-{
-	CloseInteractableWidget(ConfirmExitGameWidget_);
+	CloseInteractableWidget(ExitDialogueWidget_);
 }
 
 void ARacePlayerController::Server_RequestDrawCharacter_Implementation()

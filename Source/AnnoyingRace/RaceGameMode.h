@@ -27,18 +27,18 @@ public:
 public:
 	void HandlePlayerDeath(APlayerController* _PC) const;
 
-	//Lapsµî º¯È­ ¾øÀÌ Ä³¸¯ÅÍ¸¸ µå·Î¿ì
+	//Lapsë“± ë³€í™” ì—†ì´ ìºë¦­í„°ë§Œ ë“œë¡œìš°
 	UFUNCTION(BlueprintCallable)
-		void DrawNewCharacter(APlayerController* _PC);
+	void DrawNewCharacter(APlayerController* _PC);
 
 	void SpawnNewCharacter(APlayerController* _PC);
 
-	//Ã¼Å©Æ÷ÀÎÆ® ´Ş¼º½Ã Laps Áõ°¡ ¹× Ä³¸¯ÅÍ µå·Î¿ì
+	//ì²´í¬í¬ì¸íŠ¸ ë‹¬ì„±ì‹œ Laps ì¦ê°€ ë° ìºë¦­í„° ë“œë¡œìš°
 	void HandleCheckPointPassed(uint8 _CheckPointIndex, APlayerController* _PC);
 
 private:
 	UFUNCTION(BlueprintCallable)
-		void StartRaceCountDown();
+	void StartRaceCountDown();
 
 	TObjectPtr<class UCharacterData> PopNextCharacter();
 
@@ -46,13 +46,11 @@ private:
 
 private:
 	UPROPERTY(EditDefaultsOnly)
-		TArray<TObjectPtr<class UCharacterData>> CharacterPool_;
+	TArray<TObjectPtr<class UCharacterData>> CharacterPool_;
 
 	TQueue<TObjectPtr<UCharacterData>> CharacterQueue_;
 
 	TObjectPtr<class ATrackSplineActor> TrackSpline_;
-
-	uint8 UnReadiedPlayerCount_;
 
 	bool bRaceStarted_;
 };

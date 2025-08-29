@@ -24,6 +24,4 @@ private:
 
 	UPROPERTY(EditDefaultsOnly)
 		TSubclassOf<class UKeyMappingSlotWidget> SlotClass_;
-private:
-	TObjectPtr<struct FKeyMappingRow> KeyMappings_;
 };

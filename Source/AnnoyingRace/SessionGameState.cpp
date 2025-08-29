@@ -1,0 +1,215 @@
+#include "SessionGameState.h"
+
+#include "SessionPlayerController.h"
+#include "GameFramework/PlayerState.h"
+#include "Net/UnrealNetwork.h"
+
+ASessionGameState::ASessionGameState()
+{
+	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
+
+	//최소값을 일단 부여
+	PlayerList_.SetNum(1);
+}
+
+void ASessionGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ASessionGameState, SessionInfo_);
+	DOREPLIFETIME(ASessionGameState, PlayerList_);
+	DOREPLIFETIME(ASessionGameState, HostId_);
+}
+
+void ASessionGameState::InitializeSession(const FSessionInfo& _SessionInfo)
+{
+	if (HasAuthority())
+	{
+		SessionInfo_ = _SessionInfo;
+		PlayerList_.SetNum(SessionInfo_.MaxUserCount_);
+		OnRep_SessionInfo();
+	}
+}
+
+
+void ASessionGameState::AddPlayer(const APlayerState* _PlayerState)
+{
+	if (HasAuthority() && _PlayerState)
+	{
+		FSessionPlayerInfo NewPlayerInfo;
+
+		NewPlayerInfo.UniqueNetId_ = _PlayerState->GetUniqueId();
+		NewPlayerInfo.PlayerName_ = _PlayerState->GetPlayerName();
+		NewPlayerInfo.bIsReady_ = false;
+		NewPlayerInfo.bIsHost_ = false;
+
+		for (FSessionPlayerInfo& PlayerInfo : PlayerList_)
+		{
+			if (false == PlayerInfo.UniqueNetId_.IsValid())
+			{
+				PlayerInfo = NewPlayerInfo;
+				break;
+			}
+		}
+		OnRep_SessionInfo();
+		OnRep_PlayerList();
+	}
+}
+
+void ASessionGameState::RemovePlayer(const APlayerState* _PlayerState)
+{
+	if (HasAuthority() && _PlayerState)
+	{
+		int8 Index = FindPlayerIndex(_PlayerState->GetUniqueId());
+		if (PlayerList_.IsValidIndex(Index))
+		{
+			PlayerList_[Index].UniqueNetId_ = nullptr;
+			OnRep_PlayerList();
+		}
+	}
+}
+
+void ASessionGameState::TogglePlayerIsReady(const APlayerState* _PlayerState)
+{
+	if (HasAuthority() && _PlayerState)
+	{
+		int8 Index = FindPlayerIndex(_PlayerState->GetUniqueId());
+		if (PlayerList_.IsValidIndex(Index) && PlayerList_[Index].UniqueNetId_.IsValid())
+		{
+			PlayerList_[Index].bIsReady_ = !PlayerList_[Index].bIsReady_;
+			OnRep_PlayerList();
+			CheckAllPlayersReady();
+		}
+	}
+}
+
+void ASessionGameState::SetHost(const FUniqueNetIdRepl& _HostId)
+{
+	if (HasAuthority())
+	{
+		//새 호스트 설정
+		int8 Index = FindPlayerIndex(_HostId);
+		if (false == PlayerList_.IsValidIndex(Index))
+		{
+			ensureMsgf(false, TEXT("Host Index was wrong"));
+			return;
+		}
+		PlayerList_[Index].bIsHost_ = true;
+		
+		//이전 호스트 제거
+		Index = FindPlayerIndex(HostId_);
+		if (PlayerList_.IsValidIndex(Index))
+		{
+			PlayerList_[Index].bIsHost_ = false;
+		}
+
+		//HostID 교체		
+		HostId_ = _HostId;
+		OnRep_PlayerList();
+	}
+}
+
+void ASessionGameState::ChangeSessionName(const FString& _SessionName)
+{
+	if (HasAuthority())
+	{
+		SessionInfo_.SessionName_ = _SessionName;
+		OnRep_SessionInfo();
+	}
+}
+
+void ASessionGameState::ChangeSessionPassword(const FString& _SessionPassword)
+{
+	if (HasAuthority())
+	{
+		SessionInfo_.Password_ = _SessionPassword;
+		OnRep_SessionInfo();
+	}
+}
+
+void ASessionGameState::ChangeSessionIsPrivate(bool _bIsPrivate)
+{
+	if (HasAuthority())
+	{
+		SessionInfo_.bIsPrivate_ = _bIsPrivate;
+		OnRep_SessionInfo();
+	}
+}
+
+void ASessionGameState::SetMap(const FPrimaryAssetId& _MapId)
+{
+	if (HasAuthority() && _MapId.IsValid())
+	{
+		SessionInfo_.SelectedMapData_ = _MapId;
+		OnRep_SessionInfo();
+	}
+}
+
+void ASessionGameState::CheckAllPlayersReady()
+{
+	if (false == HasAuthority())
+	{
+		return;
+	}
+	
+	UWorld* World = GetWorld();
+	if (nullptr == World)
+	{
+		return;
+	}
+
+	for (const FSessionPlayerInfo& PlayerInfo : PlayerList_)
+	{
+		if (false == PlayerInfo.UniqueNetId_.IsValid())
+		{
+			continue;
+		}
+		
+		//준비 되지 않은 사람이 있으면, 카운트 다운 정지
+		if (false == PlayerInfo.bIsReady_)
+		{
+			for (auto It = World->GetPlayerControllerIterator(); It; It++)
+			{
+				if (auto PC = Cast<ASessionPlayerController>(*It))
+				{
+					PC->Client_StopCountDownForPlay();
+				}
+			}
+			return;
+		}
+	}
+
+	//모두 준비되었으면, 카운트 다운 시작
+	for (auto It = World->GetPlayerControllerIterator(); It; It++)
+	{
+		if (auto PC = Cast<ASessionPlayerController>(*It))
+		{
+			PC->Client_StartCountDownForPlay();
+		}
+	}
+}
+
+int8 ASessionGameState::FindPlayerIndex(const FUniqueNetIdRepl& _PlayerId) const
+{
+	if (_PlayerId.IsValid())
+	{
+		for (uint8 i = 0; i < PlayerList_.Num(); i++)
+		{
+			if (PlayerList_[i].UniqueNetId_ == _PlayerId)
+			{
+				return i;
+			}
+		}
+	}
+	return -1;
+}
+
+void ASessionGameState::OnRep_SessionInfo() const
+{
+	OnSessionInfoUpdated_.ExecuteIfBound(SessionInfo_);
+}
+
+void ASessionGameState::OnRep_PlayerList() const
+{
+	OnPlayerListUpdated_.ExecuteIfBound(PlayerList_);
+}

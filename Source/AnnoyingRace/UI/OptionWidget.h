@@ -4,6 +4,8 @@
 #include "Blueprint/UserWidget.h"
 #include "OptionWidget.generated.h"
 
+DECLARE_DELEGATE(FOnBtnClicked);
+
 /**
  * Game Option UI
  */
@@ -31,6 +33,9 @@ private:
 	UFUNCTION()
 		void OnClickedControlBtn();
 
+	UFUNCTION()
+		void OnClickedBackBtn();
+
 private:
 	void OnOptionSelected(uint8 _SelectedNum);
 
@@ -51,4 +56,7 @@ private:
 private:
 	TArray<TObjectPtr<UButton>> OptionButtons_;
 	uint8 SelectedNum_;
+
+public:
+	FOnBtnClicked OnBackBtnClicked_;
 };

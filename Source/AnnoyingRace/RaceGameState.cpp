@@ -1,6 +1,5 @@
 #include "RaceGameState.h"
 
-#include "LevelSequenceActor.h"
 #include "RacePlayerState.h"
 #include "Net/UnrealNetwork.h"
 
@@ -71,10 +70,9 @@ const TArray<TObjectPtr<APlayerState>>& ARaceGameState::GetPlayerRankings() cons
 	return PlayerRankings_;
 }
 
-
+//This Function Executed On Server Only
 void ARaceGameState::UpdatePlayerRankings()
 {
-	//This Function Executed On Server Only
 	PlayerRankings_ = PlayerArray;
 
 	PlayerRankings_.Sort([](const APlayerState& _Lhs, const APlayerState& _Rhs)
@@ -82,7 +80,7 @@ void ARaceGameState::UpdatePlayerRankings()
 			const auto LhsState = Cast<ARacePlayerState>(&_Lhs);
 			const auto RhsState = Cast<ARacePlayerState>(&_Rhs);
 
-			//Á¸ÀçÇÏÁö ¾Ê´Â (Å»ÁÖ µî) À¯Àú´Â ¼øÀ§¿¡¼­ ¹Ð¸²
+			//ì¡´ìž¬í•˜ì§€ ì•ŠëŠ” (íƒˆì£¼ ë“±) ìœ ì €ëŠ” ìˆœìœ„ì—ì„œ ë°€ë¦¼
 			if (!LhsState)
 			{
 				return false;
@@ -92,7 +90,7 @@ void ARaceGameState::UpdatePlayerRankings()
 				return true;
 			}
 
-			//Laps°¡ °°À¸¸é ÁøÇà°Å¸®·Î ÆÇ´Ü
+			//Lapsê°€ ê°™ìœ¼ë©´ ì§„í–‰ê±°ë¦¬ë¡œ íŒë‹¨
 			if (LhsState->GetLaps() == RhsState->GetLaps())
 			{
 				return LhsState->GetTotalDistance() > RhsState->GetTotalDistance();

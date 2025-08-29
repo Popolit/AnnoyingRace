@@ -7,14 +7,11 @@
 /**
  * Race PlayerController
  */
-UCLASS()
+UCLASS(HideDropdown)
 class ANNOYINGRACE_API ARacePlayerController : public APlayerController
 {
 	GENERATED_BODY()
-
-public:
-	ARacePlayerController();
-
+	
 protected:
 	virtual void OnPossess(APawn* _Pawn) override;
 
@@ -45,13 +42,12 @@ public:
 		void OpenOptionMenu();
 
 	UFUNCTION()
-		void CloseOptionMenu();
+		void OpenExitDialogue();
 
-	UFUNCTION()
-		void OpenConfirmExitGameDialog();
+private:
+	void CloseOptionMenu();
 
-	UFUNCTION()
-		void CloseConfirmExitGameDialog();
+	void CloseExitDialogue();
 
 	//Client 함수들
 public:
@@ -99,17 +95,17 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 		TSubclassOf<class UCharacterDiedWidget> CharacterDiedWidgetClass_;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, meta=(AllowedClasses="PlayerHUDWidget"))
 		TSubclassOf<UUserWidget> PlayerHUDWidgetClass_;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, meta=(AllowedClasses="RaceMenuWidget"))
 		TSubclassOf<UUserWidget> RaceMenuWidgetClass_;
 
 	UPROPERTY(EditDefaultsOnly)
-		TSubclassOf<UUserWidget> OptionWidgetClass_;
+		TSubclassOf<class UOptionWidget> OptionWidgetClass_;
 
 	UPROPERTY(EditDefaultsOnly)
-		TSubclassOf<UUserWidget> ConfirmExitGameWidgetClass_;
+		TSubclassOf<class UExitDialogueWidget> ExitDialogueWidgetClass_;
 
 	UPROPERTY()
 		TObjectPtr<UCountDownWidget> CountdownWidget_;
@@ -127,10 +123,10 @@ private:
 		TObjectPtr<UUserWidget> RaceMenuWidget_;
 
 	UPROPERTY()
-		TObjectPtr<UUserWidget> OptionWidget_;
+		TObjectPtr<UOptionWidget> OptionWidget_;
 
 	UPROPERTY()
-		TObjectPtr<UUserWidget> ConfirmExitGameWidget_;
+		TObjectPtr<UExitDialogueWidget> ExitDialogueWidget_;
 
 private:
 	UPROPERTY()
@@ -142,7 +138,7 @@ private:
 
 	//공용 인풋 (Ex : 메뉴 열기 등)
 	UPROPERTY(EditDefaultsOnly, Category = Input)
-		TObjectPtr<class UInputMappingContext> IMC_Default_;
+		TObjectPtr<UInputMappingContext> IMC_Default_;
 
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 		TObjectPtr<class UInputAction> IA_ToggleMenu_;

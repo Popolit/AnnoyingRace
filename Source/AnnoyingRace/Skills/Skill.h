@@ -18,8 +18,8 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	//NewObject<>(SkillTrigger)¸¦ ÇØ ÁÙ °Í.
-	//ÀÚ½ÄÀÇ Initialize°¡ ³¡³­ ÈÄ Super()¸¦ È£ÃâÇÒ °Í. 
+	//NewObject<>(SkillTrigger)ë¥¼ í•´ ì¤„ ê²ƒ.
+	//ìì‹ì˜ Initializeê°€ ëë‚œ í›„ Super()ë¥¼ í˜¸ì¶œí•  ê²ƒ. 
 	virtual void Initialize(ACharacter* _Character);
 
 	uint8 GetDamage() const;
@@ -34,29 +34,29 @@ protected:
 	void PlayAnimMontage(ACharacter* _Character) const;
 
 protected:
-	//SkillÀ» ¹ßµ¿½ÃÅ°´Â Á¶°Ç, ºñ¿ì¸é Æ®¸®°Å°¡ ¾ø´Â ½ºÅ³
+	//Skillì„ ë°œë™ì‹œí‚¤ëŠ” ì¡°ê±´, ë¹„ìš°ë©´ íŠ¸ë¦¬ê±°ê°€ ì—†ëŠ” ìŠ¤í‚¬
 	UPROPERTY(EditDefaultsOnly)
-		TSubclassOf<class UTrigger> SkillTriggerClass_;
+	TSubclassOf<class UTrigger> SkillTriggerClass_;
 
 	UPROPERTY()
-		TObjectPtr<UTrigger> SkillTrigger_;;
+	TObjectPtr<UTrigger> SkillTrigger_;
 
-	//Skill ¹ßµ¿¿¡ ÇÊ¿äÇÑ Á¶°Çµé
+	//Skill ë°œë™ì— í•„ìš”í•œ ì¡°ê±´ë“¤
 	UPROPERTY(Replicated)
-		TArray<TObjectPtr<class UCondition_IdleState>> Conditions_;
+	TArray<TObjectPtr<class UCondition_IdleState>> Conditions_;
 
 private:
 	UPROPERTY(EditDefaultsOnly)
-		TObjectPtr<class UAnimMontage> Animation_;
+	TObjectPtr<class UAnimMontage> Animation_;
 
 	UPROPERTY(EditDefaultsOnly)
-		FName SKillName_;
+	FName SKillName_;
 
 	UPROPERTY(EditDefaultsOnly)
-		uint8 Damage_;
+	uint8 Damage_;
 
 	//if Count is Inf, Set -1
 	UPROPERTY(EditDefaultsOnly, Replicated)
-		int RemainingUses_;
+	int RemainingUses_;
 };
 

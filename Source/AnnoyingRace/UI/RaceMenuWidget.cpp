@@ -18,7 +18,7 @@ void URaceMenuWidget::NativeConstruct()
 
 	Btn_Resume_->OnClicked.AddDynamic(PC, &ARacePlayerController::CloseMainMenu);
 	Btn_Option_->OnClicked.AddDynamic(PC, &ARacePlayerController::OpenOptionMenu);
-	Btn_Exit_->OnClicked.AddDynamic(PC, &ARacePlayerController::OpenConfirmExitGameDialog);
+	Btn_Exit_->OnClicked.AddDynamic(PC, &ARacePlayerController::OpenExitDialogue);
 }
 
 FReply URaceMenuWidget::NativeOnKeyDown(const FGeometry& _InGeometry, const FKeyEvent& _InKeyEvent)
