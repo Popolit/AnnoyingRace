@@ -173,6 +173,7 @@ void ASessionPlayerController::RequestServerTravel(const FPrimaryAssetId& _MapId
 {
 	if (HasAuthority() && ensureMsgf(_MapId.IsValid(), TEXT("Map was nullptr")))
 	{
+		UE_LOG(LogTemp, Log, TEXT("Requested Server Travel"));
 		URaceGameInstance* GI = GetGameInstance<URaceGameInstance>();
 		ASessionGameState* GS = GetWorld()->GetGameState<ASessionGameState>();
 		auto GM = GetWorld()->GetAuthGameMode<ASessionGameMode>();
@@ -196,6 +197,8 @@ void ASessionPlayerController::RequestServerTravel(const FPrimaryAssetId& _MapId
 				return;
 			}
 			GI->SetRacePlayerCount(GS->PlayerArray.Num());
+
+			UE_LOG(LogTemp, Log, TEXT("Server Travel Processed!"));
 			GM->ProcessServerTravel(URL, true);
 		}
 	}

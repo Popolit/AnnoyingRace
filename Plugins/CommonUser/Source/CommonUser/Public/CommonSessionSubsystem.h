@@ -192,18 +192,6 @@ public:
 	/** True if this request should look for player-hosted lobbies if they are available, false will only search for registered server sessions */
 	UPROPERTY(BlueprintReadWrite, Category = Session)
 	bool bUseLobbies;
-
-	/* Modified by ProjectAR */
-	FString SessionName;
-
-	/* Modified by ProjectAR */
-	int32 MinUserCount;
-
-	/* Modified by ProjectAR */
-	int32 MaxUserCount;
-
-	/* Modified by ProjectAR */
-	FPrimaryAssetId MapData;
 	
 	/** List of all found sessions, will be valid when OnSearchFinished is called */
 	UPROPERTY(BlueprintReadOnly, Category=Session)
@@ -376,7 +364,7 @@ public:
 
 	/** Enables reservation beacon flow prior to server travel when creating or joining a game session */ 
 	UPROPERTY(Config)
-	bool bUseBeacons = true;
+	bool bUseBeacons = false;
 
 protected:
 	// Functions called during the process of creating or joining a session, these can be overidden for game-specific behavior

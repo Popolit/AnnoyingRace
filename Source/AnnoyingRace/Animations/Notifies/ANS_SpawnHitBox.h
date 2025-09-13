@@ -13,9 +13,9 @@ class ANNOYINGRACE_API UANS_SpawnHitBox : public UAnimNotifyState
 	GENERATED_BODY()
 
 public:
-	virtual void NotifyBegin(USkeletalMeshComponent* _MeshComp, UAnimSequenceBase* _Animation, float _TotalDuration) override;
+	virtual void NotifyBegin(USkeletalMeshComponent* _MeshComp, UAnimSequenceBase* _Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference) override;
 
-	virtual void NotifyEnd(USkeletalMeshComponent* _MeshComp, UAnimSequenceBase* _Animation) override;
+	virtual void NotifyEnd(USkeletalMeshComponent* _MeshComp, UAnimSequenceBase* _Animation, const FAnimNotifyEventReference& EventReference) override;
 
 private:
 	UPROPERTY(EditInstanceOnly)

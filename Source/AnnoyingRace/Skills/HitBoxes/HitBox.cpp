@@ -50,18 +50,23 @@ void AHitBox::EnableCollisions()
 
 void AHitBox::OnCollisionOverlapped(UPrimitiveComponent* _OverlappedComponent, AActor* _OtherActor, UPrimitiveComponent* _OtherComp, int32 _OtherBodyIndex, bool _bFromSweep, const FHitResult& _SweepResult)
 {
+	if (false == HasAuthority())
+	{
+		return;
+	}
+	
 	AActor* OwnerActor = GetOwner();
+	check(OwnerActor);
 	if(_OtherActor == OwnerActor)
 	{
 		return;
 	}
-
-	check(OwnerActor);
-
+	
 	const USkillComponent* SkillComp = Cast<USkillComponent>(OwnerActor->GetComponentByClass(USkillComponent::StaticClass()));
 	check(SkillComp);
 
 	FPointDamageEvent DamageEvent;
 	DamageEvent.HitInfo = _SweepResult;
+	DamageEvent.ShotDirection = KnockbackVector_;
 	UGameplayStatics::ApplyPointDamage(_OtherActor, SkillComp->GetSkillDamage(), _SweepResult.TraceStart - _SweepResult.TraceEnd, _SweepResult, OwnerActor->GetInstigatorController(), OwnerActor, DamageEvent.DamageTypeClass);
 }

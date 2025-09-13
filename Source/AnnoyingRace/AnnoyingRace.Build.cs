@@ -10,7 +10,7 @@ public class AnnoyingRace : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", 
 			"EnhancedInput", "LevelSequence", "MovieScene", "UMG", "Slate", "SlateCore", "CommonUser", 
-			"OnlineSubsystem", "OnlineSubsystemSteam"
+			"OnlineSubsystem", "OnlineServicesInterface", "OnlineSubsystemSteam"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

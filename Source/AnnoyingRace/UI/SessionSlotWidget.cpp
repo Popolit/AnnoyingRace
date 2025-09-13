@@ -20,23 +20,23 @@ void USessionSlotWidget::SetSessionData(UCommonSession_SearchResult* _SessionSea
 	{
 		return;
 	}
-	
+
 	SessionSearchResult_ = _SessionSearchResult;
-	
+
 	//Session Name
-	FString SessionName;
 	bool IsSettingExist;
-	_SessionSearchResult->GetStringSetting(TEXT("SESSION_NAME"), SessionName, IsSettingExist);
+	_SessionSearchResult->GetStringSetting(TEXT("SESSION_NAME"), SessionName_, IsSettingExist);
 	if (ensureMsgf(IsSettingExist, TEXT("Session Name Setting was not found")))
 	{
-		Txt_SessionName_->SetText(FText::FromString(SessionName));
+		Txt_SessionName_->SetText(FText::FromString(SessionName_));
 	}
 
 	//Get Private Password
 	_SessionSearchResult->GetStringSetting(TEXT("PASSWORD"), SessionPassword_, IsSettingExist);
-	
+
+	bSessionLocked_ = IsSettingExist;
 	//Private Session
-	if (IsSettingExist)
+	if (bSessionLocked_)
 	{
 		Img_Lock_->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
@@ -45,13 +45,40 @@ void USessionSlotWidget::SetSessionData(UCommonSession_SearchResult* _SessionSea
 	{
 		Img_Lock_->SetVisibility(ESlateVisibility::Collapsed);
 	}
-	
+
+	FString MapDataString;
+	_SessionSearchResult->GetStringSetting(TEXT("MAPDATA"), MapDataString, IsSettingExist);
+
+	if(IsSettingExist)
+	{
+		MapData_ = FPrimaryAssetId(MapDataString);
+	}
 	FFormatNamedArguments Args;
-	int32 MaxUserCount = _SessionSearchResult->GetMaxPublicConnections();
-	int32 CurrUserCount = MaxUserCount - _SessionSearchResult->GetNumOpenPublicConnections();
+	MaxUserCount_ = _SessionSearchResult->GetMaxPublicConnections();
+	int32 CurrUserCount = MaxUserCount_ - _SessionSearchResult->GetNumOpenPublicConnections();
 	Args.Add(TEXT("Curr"), FText::AsNumber(CurrUserCount));
-	Args.Add(TEXT("Max"), FText::AsNumber(MaxUserCount));
+	Args.Add(TEXT("Max"), FText::AsNumber(MaxUserCount_));
 	Txt_UserCount_->SetText(FText::Format(FText::FromString(TEXT("{Curr} / {Max}")), Args));
+}
+
+FString USessionSlotWidget::GetSessionName()
+{
+	return SessionName_;
+}
+
+int32 USessionSlotWidget::GetMaxUserCount() const
+{
+	return MaxUserCount_;
+}
+
+bool USessionSlotWidget::IsSessionLocked() const
+{
+	return bSessionLocked_;
+}
+
+FPrimaryAssetId USessionSlotWidget::GetMapData() const
+{
+	return MapData_;
 }
 
 //Session에 참가

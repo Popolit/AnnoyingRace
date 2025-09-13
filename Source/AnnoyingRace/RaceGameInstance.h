@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
-#include "Interfaces/OnlineSessionInterface.h"
 #include "RaceGameInstance.generated.h"
 
 DECLARE_DELEGATE_ThreeParams(FOnSessionFindComplete, bool, const FText&, const TArray<class UCommonSession_SearchResult*>&)
@@ -18,14 +17,6 @@ struct FSessionData
 	FPrimaryAssetId MapData_;
 };
 
-struct FSessionFindData
-{
-	FString SessionName_;
-	uint8 MaxUserCount_ = 8;
-	uint8 MinUserCount_ = 0;
-	FPrimaryAssetId MapData_;
-};
-
 /**
  * Game Instance
  */
@@ -37,9 +28,11 @@ class ANNOYINGRACE_API URaceGameInstance : public UGameInstance
 public:
 	virtual void Init() override;
 
+	virtual void Shutdown() override;
+
 	void CreateSession(APlayerController* _PC, const FSessionData& _SessionData);
 
-	void FindSessions(APlayerController* _PC, const FSessionFindData& _SessionFindData);
+	void FindSessions(APlayerController* _PC);
 
 	void CleanUpSession(APlayerController* _PC);
 

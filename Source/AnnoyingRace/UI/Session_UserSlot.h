@@ -22,10 +22,7 @@ private:
 	
 private:
 	UPROPERTY(meta = (BindWidget))
-		TObjectPtr<class UImage> Img_UserProfile_;
-	
-	UPROPERTY(meta = (BindWidget))
-		TObjectPtr<UImage> Img_Host_;
+		TObjectPtr<class UImage> Img_Host_;
 
 	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<UImage> Img_Ready_;

@@ -215,10 +215,6 @@ public:
 		}
 		
 		QuerySettings.Set(SEARCH_EMPTY_SERVERS_ONLY, true, EOnlineComparisonOp::Equals);
-		QuerySettings.Set(FName("SESSION_NAME"), InSearchRequest->SessionName, EOnlineComparisonOp::Equals);
-		QuerySettings.Set(FName("MAPDATA"), InSearchRequest->MapData.ToString(), EOnlineComparisonOp::LessThanEquals);
-		QuerySettings.Set<int32>(FName("USER_COUNT"), InSearchRequest->MinUserCount, EOnlineComparisonOp::GreaterThanEquals);
-		QuerySettings.Set<int32>(FName("USER_COUNT"), InSearchRequest->MaxUserCount, EOnlineComparisonOp::LessThanEquals);
 	}
 
 	virtual ~FCommonOnlineSearchSettingsOSSv1() {}

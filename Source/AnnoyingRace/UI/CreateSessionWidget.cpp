@@ -157,15 +157,27 @@ void UCreateSessionWidget::OnMapsLoaded()
 	auto& AssetManager = UAssetManager::Get();
 	TArray<FPrimaryAssetId> MapAssetIds;
 	AssetManager.GetPrimaryAssetIdList(TEXT("MapData"), MapAssetIds);
-    
+
+	TArray<FString> TempMapNames;
 	for (const auto& AssetId : MapAssetIds)
 	{
 		auto MapData = Cast<UMapData>(AssetManager.GetPrimaryAssetObject(AssetId));
-    
-		if (MapData)
+
+		//Random을 첫 요소로 고정
+		if (MapData->MapDisplayName_.ToString() == "Random")
 		{
 			CBB_MapList_->AddOption(MapData->MapDisplayName_.ToString());
 		}
+		else
+		{
+			TempMapNames.Add(MapData->MapDisplayName_.ToString());
+		}
+	}
+	TempMapNames.Sort();
+	//Random 제외한 맵 이름
+	for (const FString& MapName : TempMapNames)
+	{
+		CBB_MapList_->AddOption(MapName);
 	}
 	CBB_MapList_->SetSelectedIndex(0);
 }

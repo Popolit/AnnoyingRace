@@ -48,7 +48,7 @@ void USkill::TryTriggerSkill(ACharacter* _Character)
 
 bool USkill::CheckConditions(ACharacter* _Character) const
 {
-	//TODO : ¾î¶² »çÀ¯·Î ½ºÅ³À» »ç¿ëÇÒ ¼ö ¾øÀ½À» ¾È³»
+	//TODO : ì–´ë–¤ ì´ìœ ë¡œ ìŠ¤í‚¬ì„ ì‚¬ìš©í•  ìˆ˜ ì—†ëŠ”ì§€ ì•ˆë‚´
 	if(RemainingUses_ == 0)
 	{
 		return false;

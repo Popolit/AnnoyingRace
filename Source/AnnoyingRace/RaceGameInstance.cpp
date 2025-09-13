@@ -2,7 +2,6 @@
 
 #include "SessionData.h"
 #include "CommonSessionSubsystem.h"
-#include "LobbyPlayerController.h"
 
 #define LOCTEXT_NAMESPACE "ErrorMessages"
 
@@ -18,6 +17,15 @@ void URaceGameInstance::Init()
 	}
 
 	GEngine->OnNetworkFailure().AddUObject(this, &URaceGameInstance::HandleNetworkFailure);
+}
+
+void URaceGameInstance::Shutdown()
+{
+	if (SessionSubsystem_)
+	{
+		SessionSubsystem_->CleanUpSessions();
+	}
+	Super::Shutdown();
 }
 
 void URaceGameInstance::CreateSession(APlayerController* _PC, const FSessionData& _SessionData)
@@ -40,7 +48,7 @@ void URaceGameInstance::CreateSession(APlayerController* _PC, const FSessionData
 	}
 }
 
-void URaceGameInstance::FindSessions(APlayerController* _PC, const FSessionFindData& _SessionFindData)
+void URaceGameInstance::FindSessions(APlayerController* _PC)
 {
 	if (_PC && SessionSubsystem_)
 	{
@@ -48,10 +56,6 @@ void URaceGameInstance::FindSessions(APlayerController* _PC, const FSessionFindD
 		if (ensureMsgf(SearchSessionRequest_, TEXT("Search Session Request was nullptr")))
 		{
 			SearchSessionRequest_->OnSearchFinished.AddUObject(this, &URaceGameInstance::OnFindSessionsComplete);
-			SearchSessionRequest_->SessionName = _SessionFindData.SessionName_;
-			SearchSessionRequest_->MapData = _SessionFindData.MapData_;
-			SearchSessionRequest_->MaxUserCount = _SessionFindData.MaxUserCount_;
-			SearchSessionRequest_->MinUserCount = _SessionFindData.MinUserCount_;
 			SessionSubsystem_->FindSessions(_PC, SearchSessionRequest_);
 		}
 	}
@@ -74,10 +78,11 @@ void URaceGameInstance::SetRacePlayerCount(int32 _RacePlayerCount)
 	RacePlayerCount_ = _RacePlayerCount;
 }
 
-int32 URaceGameInstance::GetRacePlayerCount() const
+int32 URaceGameInstance::GetRacePlayerCount() const 
 {
 	return RacePlayerCount_;
 }
+
 
 void URaceGameInstance::OnCreateSessionComplete(const FOnlineResultInformation& _Result)
 {

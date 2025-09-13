@@ -48,41 +48,23 @@ void USessionWidget::NativeConstruct()
 	auto& AssetManager = UAssetManager::Get();
 	TArray<FPrimaryAssetId> MapAssetDatas;
 	AssetManager.GetPrimaryAssetIdList("MapData", MapAssetDatas);
-	AssetManager.LoadPrimaryAssets(MapAssetDatas, TArray<FName>());
-
-	TArray<FString> TempMapNames;
-	for (const auto& AssetId : MapAssetDatas)
-	{
-		auto MapData = Cast<UMapData>(AssetManager.GetPrimaryAssetObject(AssetId));
-
-		//Random을 첫 요소로 고정
-		if (MapData->MapDisplayName_.ToString() == "Random")
-		{
-			CBB_MapList_->AddOption(MapData->MapDisplayName_.ToString());
-		}
-		else
-		{
-			TempMapNames.Add(MapData->MapDisplayName_.ToString());
-		}
-	}
-	//Random 제외한 맵 이름
-	for (const FString& MapName : TempMapNames)
-	{
-		CBB_MapList_->AddOption(MapName);
-	}
+	AssetManager.LoadPrimaryAssets(MapAssetDatas, TArray<FName>(),
+		FStreamableDelegate::CreateUObject(this, &USessionWidget::OnMapsLoaded));
 }
 
 //카운트 다운 애니메이션 종료 후, 게임 시작
 void USessionWidget::OnAnimationFinished_Implementation(const UWidgetAnimation* _Animation)
 {
-	if (_Animation != Anim_CountDown_)
+	//애니메이션 종료가 아닌 중단의 경우
+	if (_Animation != Anim_CountDown_ && IsAnimationPlaying(_Animation))
 	{
 		return;
 	}
+	
 	auto PC = GetOwningPlayer<ASessionPlayerController>();
-	if (nullptr == PC)
+	if (nullptr == PC || false == PC->HasAuthority())
 	{
-		return;		
+		return;
 	}
 
 	FString MapDisplayName = CBB_MapList_->GetSelectedOption();
@@ -100,22 +82,15 @@ void USessionWidget::OnAnimationFinished_Implementation(const UWidgetAnimation* 
 	{
 		//Random 제외하고 1~Max 사이의 값
 		int32 RandomIndex = FMath::RandRange(1, MapAssetIds.Num() - 1);
-		auto MapData = Cast<UMapData>(AssetManager.GetPrimaryAssetObject(MapAssetIds[RandomIndex]));
-		if (MapData)
-		{
-			SelectedMapAssetId = MapData->MapAssetId_;
-		}
+		MapDisplayName = CBB_MapList_->GetOptionAtIndex(RandomIndex);
 	}
 	//일치하는 맵을 검색
-	else
+	for (const auto& AssetId : MapAssetIds)
 	{
-		for (const auto& AssetId : MapAssetIds)
+		auto MapData = Cast<UMapData>(AssetManager.GetPrimaryAssetObject(AssetId));
+		if (MapData && MapData->MapDisplayName_.ToString() == MapDisplayName)
 		{
-			auto MapData = Cast<UMapData>(AssetManager.GetPrimaryAssetObject(AssetId));
-			if (MapData && MapData->MapDisplayName_.ToString() == MapDisplayName)
-			{
-				SelectedMapAssetId = MapData->MapAssetId_;
-			}
+			SelectedMapAssetId = MapData->MapAssetId_;
 		}
 	}
 	PC->RequestServerTravel(SelectedMapAssetId);
@@ -166,12 +141,62 @@ void USessionWidget::StopCountDown()
 	}
 }
 
+void USessionWidget::OnMapsLoaded()
+{
+	bMapsLoaded_ = true;
+	
+	auto& AssetManager = UAssetManager::Get();
+	TArray<FPrimaryAssetId> MapAssetDatas;
+	AssetManager.GetPrimaryAssetIdList("MapData", MapAssetDatas);
+	TArray<FString> TempMapNames;
+	for (const auto& AssetId : MapAssetDatas)
+	{
+		auto MapData = Cast<UMapData>(AssetManager.GetPrimaryAssetObject(AssetId));
+		if (ensureMsgf(MapData, TEXT("Map Data was nullptr")))
+		{
+			//Random을 첫 요소로 고정
+			if (MapData->MapDisplayName_.ToString() == "Random")
+			{
+				CBB_MapList_->AddOption(MapData->MapDisplayName_.ToString());
+			}
+			else
+			{
+				TempMapNames.Add(MapData->MapDisplayName_.ToString());
+			}
+		}
+	}
+	TempMapNames.Sort();
+	//Random 제외한 맵 이름
+	for (const FString& MapName : TempMapNames)
+	{
+		CBB_MapList_->AddOption(MapName);
+	}
+
+	if (CachedMap_.IsValid())
+	{
+		for (const auto& AssetId : MapAssetDatas)
+		{
+			if (AssetId == CachedMap_)
+			{
+				auto MapData = Cast<UMapData>(AssetManager.GetPrimaryAssetObject(AssetId));
+				CBB_MapList_->SetSelectedOption(MapData->MapDisplayName_.ToString());
+			}
+		}
+	}
+}
+
 void USessionWidget::UpdateSessionInfo(const FSessionInfo& _SessionInfo)
 {
 	EDT_SessionName_->SetText(FText::FromString(_SessionInfo.SessionName_));
 	ETB_Password_->SetText(FText::FromString(_SessionInfo.Password_));
 	CHB_IsPrivate_->SetCheckedState(_SessionInfo.bIsPrivate_ ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
 	ETB_Password_->SetIsReadOnly(!_SessionInfo.bIsPrivate_);
+	
+	if (false == bMapsLoaded_)
+	{
+		CachedMap_ = _SessionInfo.SelectedMapData_;
+		return;
+	}
 	
 	//일치하는 맵을 검색
 	auto& AssetManager = UAssetManager::Get();

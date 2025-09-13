@@ -23,4 +23,8 @@ public:
 		int32 _OtherBodyIndex,
 		bool _bFromSweep,
 		const FHitResult& _SweepResult);
+
+private:
+	UPROPERTY(EditAnywhere)
+		FVector KnockbackVector_;
 };

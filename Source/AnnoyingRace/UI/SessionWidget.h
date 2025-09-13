@@ -25,10 +25,11 @@ public:
 	void StopCountDown();
 	
 private:
+	void OnMapsLoaded();
+	
 	void UpdateSessionInfo(const struct FSessionInfo& _SessionInfo);
 
 	void UpdatePlayerList(const TArray<struct FSessionPlayerInfo>& _PlayerList);
-
 
 private:
 	void UpdateUIForHost();
@@ -88,5 +89,9 @@ private:
 		TSubclassOf<class USession_UserSlot> SessionUserSlotClass_;
 
 private:
+	bool bMapsLoaded_;
+	
+	FPrimaryAssetId CachedMap_;
+	
 	uint8 Count_;
 };

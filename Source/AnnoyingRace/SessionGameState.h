@@ -9,6 +9,12 @@ struct FSessionPlayerInfo
 {
 	GENERATED_BODY()
 public:
+	FSessionPlayerInfo() :
+		UniqueNetId_(),
+		PlayerName_(),
+		bIsHost_(false),
+		bIsReady_(false) {}
+	
 	bool operator==(const FSessionPlayerInfo& _Rhs) const
 	{
 		return UniqueNetId_ == _Rhs.UniqueNetId_;
@@ -22,9 +28,6 @@ public:
 		FString PlayerName_;
 
 	UPROPERTY()
-		TSoftObjectPtr<UTexture2D> PlayerImg_;
-
-	UPROPERTY()
 		bool bIsHost_;
 
 	UPROPERTY()
@@ -35,6 +38,16 @@ USTRUCT()
 struct FSessionInfo
 {
 	GENERATED_BODY()
+
+public:
+	FSessionInfo() :
+		SessionName_(),
+		SelectedMapData_(),
+		MaxUserCount_(8),
+		CurrentUserCount_(1),
+		bIsPrivate_(false),
+		Password_() {}
+	
 	UPROPERTY()
 		FString SessionName_;
 

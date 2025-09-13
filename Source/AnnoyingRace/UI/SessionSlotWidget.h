@@ -18,6 +18,14 @@ protected:
 public:
 	void SetSessionData(class UCommonSession_SearchResult* _SessionSearchResult);
 
+	FString GetSessionName();
+
+	int32 GetMaxUserCount() const;
+
+	bool IsSessionLocked() const;
+
+	FPrimaryAssetId GetMapData() const;
+
 private:
 	UFUNCTION()
 		void OnClickedEnter();
@@ -38,6 +46,15 @@ private:
 		TObjectPtr<class UButton> Btn_Enter_;
 
 private:
-	TWeakObjectPtr<class UCommonSession_SearchResult> SessionSearchResult_;
+	TWeakObjectPtr<UCommonSession_SearchResult> SessionSearchResult_;
+
+	FString SessionName_;
+
+	int32 MaxUserCount_;
+
+	bool bSessionLocked_;
+
 	FString SessionPassword_;
+
+	FPrimaryAssetId MapData_;
 };

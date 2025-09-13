@@ -10,6 +10,7 @@
 #include "RacePlayerController.h"
 #include "Components/SkillComponent.h"
 #include "Components/StatusComponent.h"
+#include "Engine/DamageEvents.h"
 
 
 APlayableCharacter::APlayableCharacter()
@@ -73,8 +74,14 @@ float APlayableCharacter::TakeDamage(float _DamageAmount, FDamageEvent const& _D
 void APlayableCharacter::ProcessHit(uint8 _DamageAmount, FDamageEvent const& _DamageEvent)
 {
 	StatusComponent_->DamageToHP(_DamageAmount);
+	const FPointDamageEvent* PointDamageEvent = static_cast<const FPointDamageEvent*>(&_DamageEvent);
 
-	//»ç¸Á ÇßÀ¸¸é È÷Æ®Ã³¸®ÇÏÁö ¾ÊÀ½
+	if (PointDamageEvent)
+	{
+		LaunchCharacter(PointDamageEvent->ShotDirection, true, false);
+	}
+	
+	//ì‚¬ë§í–ˆëŠ”ì§€ í™•ì¸
 	if(StateComponent_->CheckCurrentState(EState::Death))
 	{
 		return;
@@ -82,7 +89,7 @@ void APlayableCharacter::ProcessHit(uint8 _DamageAmount, FDamageEvent const& _Da
 
 	if(HitAnimation_)
 	{
-		StateComponent_->SetState(EState::Hit);
+		//StateComponent_->SetState(EState::Hit);
 		Server_PlayAnimMontage(HitAnimation_);
 	}
 }
@@ -130,7 +137,6 @@ void APlayableCharacter::Multicast_ProcessDeath_Implementation()
 	if(ARacePlayerController* PC = Cast<ARacePlayerController>(GetController()))
 	{
 		PC->SetSpectatorMode(CameraComponent_->GetComponentTransform());
-		
 	}
 	OnCharacterDied_.ExecuteIfBound(this);
 }

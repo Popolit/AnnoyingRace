@@ -111,6 +111,26 @@ void ARacePlayerController::SetSpectatorMode(const FTransform& _TransformToSpect
 	}
 }
 
+void ARacePlayerController::OpenWaitingPlayersUI()
+{
+	if ( nullptr == WaitingPlayersWidget_ && ensureMsgf( WaitingPlayersWidgetClass_ , TEXT( "WidgetClass was null" ) ) )
+	{
+		WaitingPlayersWidget_ = CreateWidget( this , WaitingPlayersWidgetClass_ );
+		WaitingPlayersWidget_->AddToViewport();
+	}
+	OpenInteractableWidget( WaitingPlayersWidget_ );
+}
+
+void ARacePlayerController::CloseWaitingPlayersUI()
+{
+	if(WaitingPlayersWidget_ )
+	{
+		WaitingPlayersWidget_->RemoveFromParent();
+		FInputModeGameOnly InputMode;
+		SetInputMode( InputMode );
+		bShowMouseCursor = false;
+	}
+}
 
 void ARacePlayerController::Client_EnableCharacterInput_Implementation()
 {

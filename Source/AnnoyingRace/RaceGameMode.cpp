@@ -44,15 +44,18 @@ void ARaceGameMode::StartMatch()
 	for(auto Player : GS->PlayerArray)
 	{
 		auto PC = Cast<ARacePlayerController>(Player->GetPlayerController());
-		check(PC);
 
-		//인트로 연출 재생
-		PC->PlaySequence("Intro");
-
-		//BGM 재생
-		if (ensureMsgf(WorldSettings && WorldSettings->WorldBGM_, TEXT("World Settings' BGM was not set")))
+		if(PC )
 		{
-			PC->Client_PlaySound2D(WorldSettings->WorldBGM_);
+			PC->CloseWaitingPlayersUI();
+			//인트로 연출 재생
+			PC->PlaySequence("Intro");
+
+			//BGM 재생
+			if (ensureMsgf(WorldSettings && WorldSettings->WorldBGM_, TEXT("World Settings' BGM was not set")))
+			{
+				PC->Client_PlaySound2D(WorldSettings->WorldBGM_);
+			}
 		}
 	}
 }
@@ -60,6 +63,11 @@ void ARaceGameMode::StartMatch()
 void ARaceGameMode::PostLogin(APlayerController* _NewPlayer)
 {
 	Super::PostLogin(_NewPlayer);
+
+	auto PC = Cast<ARacePlayerController>( _NewPlayer );
+	check( PC );
+
+	PC->OpenWaitingPlayersUI();
 
 	ARacePlayerState* RacePlayerState = _NewPlayer->GetPlayerState<ARacePlayerState>();
 	check(RacePlayerState);
@@ -140,9 +148,9 @@ void ARaceGameMode::SpawnNewCharacter(APlayerController* _PC)
 		const uint8 CheckPointIndex = PS->GetCheckPointIndex();
 		SpawnTransform = TrackSpline_->GetSplinePointTransform(CheckPointIndex);
 
+		{
 		ARacePlayerController* PC = Cast<ARacePlayerController>(_PC);
 		if(PC)
-		{
 			PC->Client_EnableCharacterInput();
 		}
 	}

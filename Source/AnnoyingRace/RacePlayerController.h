@@ -30,6 +30,10 @@ public:
 
 	//UI관련 함수들
 public:
+	void OpenWaitingPlayersUI();
+
+	void CloseWaitingPlayersUI();
+
 	void OpenMainMenu();
 
 	UFUNCTION()
@@ -86,6 +90,9 @@ private:
 	void CloseInteractableWidget(UUserWidget* _Widget);
 
 private:
+	UPROPERTY(EditDefaultsOnly, meta=(AllowedClasses="WaitingPlayersWidget" ))
+		TSubclassOf<UUserWidget> WaitingPlayersWidgetClass_;
+
 	UPROPERTY(EditDefaultsOnly)
 		TSubclassOf<class UCountDownWidget> CountDownWidgetClass_;
 
@@ -106,6 +113,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly)
 		TSubclassOf<class UExitDialogueWidget> ExitDialogueWidgetClass_;
+
+	UPROPERTY()
+		TObjectPtr<UUserWidget> WaitingPlayersWidget_;
 
 	UPROPERTY()
 		TObjectPtr<UCountDownWidget> CountdownWidget_;

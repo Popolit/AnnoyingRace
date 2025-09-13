@@ -35,9 +35,13 @@ private:
 		void OnClickRefresh();
 
 private:
+	void OnMapsLoaded();
+
 	void OnSessionFindFinished(bool _bSuccess, const FText& _ErrorMessage, const TArray<class UCommonSession_SearchResult*>& _Results);
 
-	FPrimaryAssetId FindMapAssetIdByMapName(const FString& _MapName);
+	FPrimaryAssetId FindMapAssetIdByMapName(const FString& _MapName) const;
+
+	void UpdateSessionList();
 	
 private:
 	UPROPERTY(meta = (BindWidget))

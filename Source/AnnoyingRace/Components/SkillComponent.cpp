@@ -34,25 +34,32 @@ void USkillComponent::BeginPlay()
 
 	if (Character->HasAuthority())
 	{
-		check(SkillClass_);
-		Skill_ = NewObject<USkill>(this, SkillClass_);
-		OnRep_Skill();
+		if (SkillClass_)
+		{
+			Skill_ = NewObject<USkill>(this, SkillClass_);
+			OnRep_Skill();
+		}
 	}
 }
 
 uint8 USkillComponent::GetSkillDamage() const
 {
-	return Skill_->GetDamage();
+	if (Skill_)
+	{
+		return Skill_->GetDamage();
+	}
+	return 0;
 }
 
 void USkillComponent::OnRep_Skill()
 {
-	check(Skill_);
+	if (Skill_)
+	{
+		ACharacter* Character = Cast<ACharacter>(GetOwner());
+		check(Character);
 
-	ACharacter* Character = Cast<ACharacter>(GetOwner());
-	check(Character);
-
-	Skill_->Initialize(Character);
+		Skill_->Initialize(Character);
+	}
 }
 
 

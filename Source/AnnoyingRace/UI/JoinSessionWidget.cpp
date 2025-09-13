@@ -33,25 +33,20 @@ void UJoinSessionWidget::NativeConstruct()
 		if (ensureMsgf(GI, TEXT("Game Instance class was not set")))
 		{
 			GI->OnSessionFindComplete_.BindUObject(this, &UJoinSessionWidget::OnSessionFindFinished);
-			GI->FindSessions(PC, FSessionFindData());
+			GI->FindSessions(PC);
 		}
 	}
 
+	CBB_MapList_->ClearOptions();
+	CBB_MapList_->AddOption( "Any" );
+	CBB_MapList_->SetSelectedOption( "Any" );
+
+	//Map 리스트 로드
 	auto& AssetManager = UAssetManager::Get();
-	TArray<FPrimaryAssetId> MapAssetIds;
-	AssetManager.GetPrimaryAssetIdList("MapData", MapAssetIds);
-	
-	//맵 리스트 순회
-	for (const auto& AssetId : MapAssetIds)
-	{
-		auto MapData = Cast<UMapData>(AssetManager.GetPrimaryAssetObject(AssetId));
-
-		//맵 종류 채우기
-		if (MapData)
-		{
-			CBB_MapList_->AddOption(MapData->MapDisplayName_.ToString());
-		}
-	}
+	TArray<FPrimaryAssetId> MapAssetDatas;
+	AssetManager.GetPrimaryAssetIdList( "MapData" , MapAssetDatas );
+	AssetManager.LoadPrimaryAssets( MapAssetDatas , TArray<FName>() ,
+		FStreamableDelegate::CreateUObject( this , &UJoinSessionWidget::OnMapsLoaded ));
 }
 
 void UJoinSessionWidget::OnMapChanged(FString _MapName, ESelectInfo::Type _Type)
@@ -128,6 +123,7 @@ void UJoinSessionWidget::OnMinUserCommitted(const FText& _Text, ETextCommit::Typ
 	else
 	{
 		LastValidMinUserCount_ = _Text;
+		UpdateSessionList();
 	}
 }
 
@@ -193,6 +189,7 @@ void UJoinSessionWidget::OnMaxUserCommitted(const FText& _Text, ETextCommit::Typ
 	else
 	{
 		LastValidMaxUserCount_ = _Text;
+		UpdateSessionList();
 	}
 }
 
@@ -201,17 +198,38 @@ void UJoinSessionWidget::OnClickRefresh()
 	auto GI = GetGameInstance<URaceGameInstance>();
 	if (GI)
 	{
-		FSessionFindData SessionFindData;
-		SessionFindData.SessionName_ = ETB_SessionName_->GetText().ToString();
-		SessionFindData.MaxUserCount_ = FCString::Atoi(*ETB_MaxUserCount_->GetText().ToString());
-		SessionFindData.MinUserCount_ = FCString::Atoi(*ETB_MinUserCount_->GetText().ToString());
+		GI->FindSessions(GetOwningPlayer());
+	}
+}
 
-		FPrimaryAssetId MapAssetId = FindMapAssetIdByMapName(CBB_MapList_->GetSelectedOption());
-		if (ensureMsgf(MapAssetId.IsValid(), TEXT("MapAssetId was invalid")))
+void UJoinSessionWidget::OnMapsLoaded()
+{
+	auto& AssetManager = UAssetManager::Get();
+	TArray<FPrimaryAssetId> MapAssetDatas;
+	AssetManager.GetPrimaryAssetIdList( "MapData" , MapAssetDatas );
+	TArray<FString> TempMapNames;
+	for ( const auto& AssetId : MapAssetDatas )
+	{
+		auto MapData = Cast<UMapData>( AssetManager.GetPrimaryAssetObject( AssetId ) );
+		if ( ensureMsgf( MapData , TEXT( "Map Data was nullptr" ) ) )
 		{
-			SessionFindData.MapData_ = MapAssetId;
+			//Random을 첫 요소로 고정
+			if ( MapData->MapDisplayName_.ToString() == "Random" )
+			{
+				CBB_MapList_->AddOption( MapData->MapDisplayName_.ToString() );
+			}
+			else
+			{
+				TempMapNames.Add( MapData->MapDisplayName_.ToString() );
+			}
 		}
-		GI->FindSessions(GetOwningPlayer(), SessionFindData);
+	}
+
+	TempMapNames.Sort();
+	//Random 제외한 맵 이름
+	for ( const FString& MapName : TempMapNames )
+	{
+		CBB_MapList_->AddOption( MapName );
 	}
 }
 
@@ -244,7 +262,7 @@ void UJoinSessionWidget::OnSessionFindFinished(bool _bSuccess, const FText& _Err
 }
 
 //맵 리스트 순회, 찾는 맵 AssetID를 가져옴
-FPrimaryAssetId UJoinSessionWidget::FindMapAssetIdByMapName(const FString& _MapName)
+FPrimaryAssetId UJoinSessionWidget::FindMapAssetIdByMapName(const FString& _MapName) const
 {
 	auto& AssetManager = UAssetManager::Get();
 	TArray<FPrimaryAssetId> MapAssetIds;
@@ -259,5 +277,53 @@ FPrimaryAssetId UJoinSessionWidget::FindMapAssetIdByMapName(const FString& _MapN
 		}
 	}
 	return FPrimaryAssetId();
+}
+
+void UJoinSessionWidget::UpdateSessionList()
+{
+	TArray<UWidget*> Temp;
+
+	//검색 결과에 맞춤
+	for(const auto& Child : SCB_SessionList_->GetAllChildren())
+	{
+		const auto ChildSlot = Cast<USessionSlotWidget>(Child);
+
+		if(ChildSlot)
+		{
+			//세션 이름
+			FString SearchingName = ETB_SessionName_->GetText().ToString();
+			if(false == ChildSlot->GetSessionName().Contains(SearchingName))
+			{
+				continue;
+			}
+
+			//맵
+			FString SelectedMapName = CBB_MapList_->GetSelectedOption();
+			if(SelectedMapName != "Any" )
+			{
+				FPrimaryAssetId MapData = ChildSlot->GetMapData();
+				auto& AssetManager = UAssetManager::Get();
+				const auto Map = Cast<UMapData>(AssetManager.GetPrimaryAssetObject( MapData ));
+				
+				if(ensure(Map))
+				{
+					if(Map->MapDisplayName_.ToString() != SelectedMapName)
+					{
+						continue;
+					}
+				}
+			}
+
+			//플레이어 수
+			int32 MinUserCount = FCString::Atoi(*ETB_MinUserCount_->GetText().ToString());
+			int32 MaxUserCount = FCString::Atoi(*ETB_MaxUserCount_->GetText().ToString());
+			int32 UserCount = ChildSlot->GetMaxUserCount();
+			if(UserCount < MinUserCount || MaxUserCount < UserCount)
+			{
+				continue;
+			}
+			Temp.Add(ChildSlot);
+		}
+	}
 }
 #undef LOCTEXT_NAMESPACE
