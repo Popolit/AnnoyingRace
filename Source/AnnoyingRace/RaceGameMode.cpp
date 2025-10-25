@@ -8,13 +8,13 @@
 #include "Kismet/GameplayStatics.h"
 #include "World/TrackSplineActor.h"
 #include "Characters/CharacterData.h"
-#include "World/RaceWorldSettings.h"
 
 ARaceGameMode::ARaceGameMode()
 {
 	GameStateClass = ARaceGameState::StaticClass();
 	PlayerStateClass = ARacePlayerState::StaticClass();
 	DefaultPawnClass = nullptr;
+	bRaceStarted_ = false;
 }
 
 void ARaceGameMode::StartPlay()
@@ -39,23 +39,16 @@ void ARaceGameMode::StartMatch()
 	ARaceGameState* GS = GetGameState<ARaceGameState>();
 	check(GS);
 
-	auto WorldSettings = Cast<ARaceWorldSettings>(GetWorldSettings());
-
 	for(auto Player : GS->PlayerArray)
 	{
 		auto PC = Cast<ARacePlayerController>(Player->GetPlayerController());
 
-		if(PC )
+		if(PC)
 		{
-			PC->CloseWaitingPlayersUI();
+			UE_LOG(LogTemp, Display, TEXT("%s - StartMatch"), *PC->PlayerState->GetPlayerName());
+			PC->Client_CloseWaitingPlayersUI();
 			//인트로 연출 재생
-			PC->PlaySequence("Intro");
-
-			//BGM 재생
-			if (ensureMsgf(WorldSettings && WorldSettings->WorldBGM_, TEXT("World Settings' BGM was not set")))
-			{
-				PC->Client_PlaySound2D(WorldSettings->WorldBGM_);
-			}
+			PC->Client_PlaySequence("Intro");
 		}
 	}
 }
@@ -63,15 +56,15 @@ void ARaceGameMode::StartMatch()
 void ARaceGameMode::PostLogin(APlayerController* _NewPlayer)
 {
 	Super::PostLogin(_NewPlayer);
-
 	auto PC = Cast<ARacePlayerController>( _NewPlayer );
-	check( PC );
+	check(PC);
 
-	PC->OpenWaitingPlayersUI();
+	PC->Client_OpenWaitingPlayersUI();
 
 	ARacePlayerState* RacePlayerState = _NewPlayer->GetPlayerState<ARacePlayerState>();
 	check(RacePlayerState);
 	RacePlayerState->SetCheckPointIndex(0);
+	UE_LOG(LogTemp, Display, TEXT("%s - PostLogin"), *_NewPlayer->PlayerState->GetPlayerName());
 }
 
 bool ARaceGameMode::ReadyToStartMatch_Implementation()
@@ -82,10 +75,16 @@ bool ARaceGameMode::ReadyToStartMatch_Implementation()
 	if (GI)
 	{
 		const int32 ExpectedPlayerCount = GI->GetRacePlayerCount();
-		return 0 < ExpectedPlayerCount && ExpectedPlayerCount == GetNumPlayers();
+		return 0 < ExpectedPlayerCount && ExpectedPlayerCount == ReadiedPlayerCount_;
 	}
 
 	return false;
+}
+
+//TODO : Decrease Count가 필요한지 생각해보기
+void ARaceGameMode::AddReadiedPlayerCount()
+{
+	ReadiedPlayerCount_++;
 }
 
 void ARaceGameMode::HandlePlayerDeath(APlayerController* _PC) const

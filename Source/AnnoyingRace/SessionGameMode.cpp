@@ -57,63 +57,21 @@ void ASessionGameMode::SetSessionJoinable(bool _bCanJoin)
     }
 }
 
-void ASessionGameMode::ChangeSessionName(const FString& _SessionName)
+//공개 세션으로 변경
+void ASessionGameMode::MakeSessionPublic()
 {
-    ASessionGameState* GS = GetGameState<ASessionGameState>();
-    auto SessionInterface = GetSessionInterface();
-
-    if (GS && SessionInterface)
-    {
-        FNamedOnlineSession* Session = SessionInterface->GetNamedSession(NAME_GameSession);
-        if (Session)
-        {
-            Session->SessionSettings.Set(FName("SESSION_NAME"), _SessionName);
-            GS->ChangeSessionName(_SessionName);
-            SessionInterface->UpdateSession(NAME_GameSession, Session->SessionSettings);
-        }
-    }
-}
-
-void ASessionGameMode::ChangeSessionPassword(const FString& _SessionPassword)
-{
-    ASessionGameState* GS = GetGameState<ASessionGameState>();
-    auto SessionInterface = GetSessionInterface();
-
-    if (GS && SessionInterface)
-    {
-        FNamedOnlineSession* Session = SessionInterface->GetNamedSession(NAME_GameSession);
-        if (Session)
-        {
-            Session->SessionSettings.Set(FName("PASSWORD"), _SessionPassword);
-            GS->ChangeSessionPassword(_SessionPassword);
-            SessionInterface->UpdateSession(NAME_GameSession, Session->SessionSettings);
-        }
-    }
-}
-
-void ASessionGameMode::ChangeSessionIsPrivate(bool _bIsPrivate, const FString& _SessionPassword)
-{
-    ASessionGameState* GS = GetGameState<ASessionGameState>();
-    auto SessionInterface = GetSessionInterface();
-
-    if (GS && SessionInterface)
-    {
-        FNamedOnlineSession* Session = SessionInterface->GetNamedSession(NAME_GameSession);
-        if (Session)
-        {
-            GS->ChangeSessionIsPrivate(_bIsPrivate);
-            if (_bIsPrivate)
-            {
-                Session->SessionSettings.Set(FName("PASSWORD"), _SessionPassword);
-                GS->ChangeSessionPassword(_SessionPassword);
-            }
-            else
-            {
-                Session->SessionSettings.Remove(FName("PASSWORD"));
-            }
-            SessionInterface->UpdateSession(NAME_GameSession, Session->SessionSettings);
-        }
-    }
+	auto SessionInterface = GetSessionInterface();
+	if (SessionInterface)
+	{
+		FNamedOnlineSession* Session = SessionInterface->GetNamedSession(NAME_GameSession);
+		if (Session)
+		{
+			int32 NumUsers = Session->SessionSettings.NumPrivateConnections;
+			Session->SessionSettings.NumPublicConnections = NumUsers + 1;
+			Session->SessionSettings.NumPrivateConnections = 0;
+			SessionInterface->UpdateSession(NAME_GameSession, Session->SessionSettings);
+		}
+	}
 }
 
 void ASessionGameMode::RequestChat(const FText& _Chat, const FString& _ChatterName)
@@ -160,19 +118,56 @@ void ASessionGameMode::InitializeSession()
         {
             FSessionInfo CurrentSessionInfo;
             Session->SessionSettings.Get(FName("SESSION_NAME"), CurrentSessionInfo.SessionName_);
-            CurrentSessionInfo.MaxUserCount_ = Session->SessionSettings.NumPublicConnections;
+            CurrentSessionInfo.MaxUserCount_ = Session->SessionSettings.NumPrivateConnections;
             CurrentSessionInfo.CurrentUserCount_ = 1;
-            Session->SessionSettings.Get(FName("PASSWORD"), CurrentSessionInfo.Password_);
-            CurrentSessionInfo.bIsPrivate_ = !CurrentSessionInfo.Password_.IsEmpty();
+        	CurrentSessionInfo.bIsPrivate_ = true;
 
             FString MapName;
             Session->SessionSettings.Get(FName("MAPDATA"), MapName);
             CurrentSessionInfo.SelectedMapData_ = FPrimaryAssetId(MapName);
-            
-            GS->InitializeSession(CurrentSessionInfo);
+
+        	SessionInterface->OnUpdateSessionCompleteDelegates.AddUObject(this, &ASessionGameMode::OnSessionUpdated);
+            GS->UpdateSession(CurrentSessionInfo);
             GS->SetHost(Session->OwningUserId);
         }
     }
+}
+
+void ASessionGameMode::OnSessionUpdated(FName _SessionName, bool _bWasSuccessful)
+{
+	if (false == _bWasSuccessful)
+	{
+		return;
+	}
+	
+	ASessionGameState* GS = GetGameState<ASessionGameState>();
+	auto SessionInterface = GetSessionInterface();
+
+	if (GS && SessionInterface)
+	{
+		FNamedOnlineSession* Session = SessionInterface->GetNamedSession(_SessionName);
+		if (Session)
+		{
+			FSessionInfo SessionInfo;
+			Session->SessionSettings.Get(FName("SESSION_NAME"), SessionInfo.SessionName_);
+			SessionInfo.bIsPrivate_ = (0 < Session->SessionSettings.NumPrivateConnections)
+												&& (0 == Session->SessionSettings.NumPublicConnections);
+			
+			if (SessionInfo.bIsPrivate_)
+			{
+				SessionInfo.MaxUserCount_ = Session->SessionSettings.NumPrivateConnections;
+			}
+			else
+			{
+				SessionInfo.MaxUserCount_ = Session->SessionSettings.NumPublicConnections;
+			}
+			
+			FString MapName;
+			Session->SessionSettings.Get(FName("MAPDATA"), MapName);
+			SessionInfo.SelectedMapData_ = FPrimaryAssetId(MapName);
+			GS->UpdateSession(SessionInfo);
+		}
+	}
 }
 
 TSharedPtr<IOnlineSession, ESPMode::ThreadSafe> ASessionGameMode::GetSessionInterface()

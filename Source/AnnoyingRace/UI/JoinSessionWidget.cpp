@@ -1,5 +1,6 @@
 #include "JoinSessionWidget.h"
 
+#include "CommonSessionSubsystem.h"
 #include "LobbyPlayerController.h"
 #include "RaceGameInstance.h"
 #include "SessionSlotWidget.h"
@@ -19,6 +20,8 @@ void UJoinSessionWidget::NativeConstruct()
 	
 	SCB_SessionList_->ClearChildren();
 	CBB_MapList_->OnSelectionChanged.AddDynamic(this, &UJoinSessionWidget::OnMapChanged);
+	ETB_SessionName_->OnTextChanged.AddDynamic(this, &UJoinSessionWidget::OnSessionNameChanged);
+	ETB_SessionName_->OnTextCommitted.AddDynamic(this, &UJoinSessionWidget::OnSessionNameCommitted);
 	ETB_MinUserCount_->OnTextChanged.AddDynamic(this, &UJoinSessionWidget::OnMinUserChanged);
 	ETB_MinUserCount_->OnTextCommitted.AddDynamic(this, &UJoinSessionWidget::OnMinUserCommitted);
 	ETB_MaxUserCount_->OnTextChanged.AddDynamic(this, &UJoinSessionWidget::OnMaxUserChanged);
@@ -59,6 +62,22 @@ void UJoinSessionWidget::OnMapChanged(FString _MapName, ESelectInfo::Type _Type)
 
 		Img_Map_->SetBrushFromSoftTexture(MapData->MapThumbnail_);
 	}
+	UpdateSessionList();
+}
+
+void UJoinSessionWidget::OnSessionNameChanged(const FText& _Text)
+{
+	UpdateSessionList();
+}
+
+void UJoinSessionWidget::OnSessionNameCommitted(const FText& _Text, ETextCommit::Type _CommitMethod)
+{
+	if (_CommitMethod != ETextCommit::Type::OnEnter)
+	{
+		return;
+	}
+
+	UpdateSessionList();
 }
 
 void UJoinSessionWidget::OnMinUserChanged(const FText& _Text)
@@ -90,6 +109,7 @@ void UJoinSessionWidget::OnMinUserChanged(const FText& _Text)
 	else
 	{
 		LastValidMinUserCount_ = _Text;
+		UpdateSessionList();
 	}
 }
 
@@ -156,6 +176,7 @@ void UJoinSessionWidget::OnMaxUserChanged(const FText& _Text)
 	else
 	{
 		LastValidMaxUserCount_ = _Text;
+		UpdateSessionList();
 	}
 }
 
@@ -252,13 +273,8 @@ void UJoinSessionWidget::OnSessionFindFinished(bool _bSuccess, const FText& _Err
 		return;
 	}
 
-	SCB_SessionList_->ClearChildren();
-	for (auto Result : _Results)
-	{
-		USessionSlotWidget* SlotWidget = CreateWidget<USessionSlotWidget>(this, SessionSlotWidgetClass_);
-		SlotWidget->SetSessionData(Result);
-		SCB_SessionList_->AddChild(SlotWidget);
-	}
+	Results_ = _Results;
+	UpdateSessionList();
 }
 
 //맵 리스트 순회, 찾는 맵 AssetID를 가져옴
@@ -281,49 +297,68 @@ FPrimaryAssetId UJoinSessionWidget::FindMapAssetIdByMapName(const FString& _MapN
 
 void UJoinSessionWidget::UpdateSessionList()
 {
-	TArray<UWidget*> Temp;
+	SCB_SessionList_->ClearChildren();
 
 	//검색 결과에 맞춤
-	for(const auto& Child : SCB_SessionList_->GetAllChildren())
+	for(const auto& Result : Results_)
 	{
-		const auto ChildSlot = Cast<USessionSlotWidget>(Child);
-
-		if(ChildSlot)
+		bool IsSettingExist;
+		FString SessionName;
+		
+		//Session Name
+		Result->GetStringSetting(TEXT("SESSION_NAME"), SessionName, IsSettingExist);
+		if (ensureMsgf(IsSettingExist, TEXT("Session Name Setting was not found")))
 		{
-			//세션 이름
 			FString SearchingName = ETB_SessionName_->GetText().ToString();
-			if(false == ChildSlot->GetSessionName().Contains(SearchingName))
+			if(false == SessionName.Contains(SearchingName))
 			{
 				continue;
 			}
+		}
 
-			//맵
+		FString MapSetting;
+		TSoftObjectPtr<UTexture2D> MapThumbnail;
+		
+		//Map
+		Result->GetStringSetting(TEXT("MAPDATA"), MapSetting, IsSettingExist);
+		if (IsSettingExist)
+		{
 			FString SelectedMapName = CBB_MapList_->GetSelectedOption();
-			if(SelectedMapName != "Any" )
+			FPrimaryAssetId MapData = FPrimaryAssetId(MapSetting);
+			auto& AssetManager = UAssetManager::Get();
+			const auto Map = Cast<UMapData>(AssetManager.GetPrimaryAssetObject( MapData ));
+			if(ensure(Map) && SelectedMapName != "Any")
 			{
-				FPrimaryAssetId MapData = ChildSlot->GetMapData();
-				auto& AssetManager = UAssetManager::Get();
-				const auto Map = Cast<UMapData>(AssetManager.GetPrimaryAssetObject( MapData ));
-				
-				if(ensure(Map))
+				if(Map->MapDisplayName_.ToString() != SelectedMapName)
 				{
-					if(Map->MapDisplayName_.ToString() != SelectedMapName)
-					{
-						continue;
-					}
+					continue;
 				}
 			}
-
-			//플레이어 수
-			int32 MinUserCount = FCString::Atoi(*ETB_MinUserCount_->GetText().ToString());
-			int32 MaxUserCount = FCString::Atoi(*ETB_MaxUserCount_->GetText().ToString());
-			int32 UserCount = ChildSlot->GetMaxUserCount();
-			if(UserCount < MinUserCount || MaxUserCount < UserCount)
-			{
-				continue;
-			}
-			Temp.Add(ChildSlot);
+			MapThumbnail = Map->MapThumbnail_;
 		}
+
+		//Player Count
+		int32 MinUserCount = FCString::Atoi(*ETB_MinUserCount_->GetText().ToString());
+		int32 MaxUserCount = FCString::Atoi(*ETB_MaxUserCount_->GetText().ToString());
+		int32 UserCount = Result->GetMaxPublicConnections();
+		int32 CurrUserCount = UserCount - Result->GetNumOpenPublicConnections();
+
+		if(UserCount < MinUserCount || MaxUserCount < UserCount)
+		{
+			continue;
+		}
+
+		FString Password;
+		//Get Private Password
+		Result->GetStringSetting(TEXT("PASSWORD"), Password, IsSettingExist);
+
+		USessionSlotWidget* NewSlot = CreateWidget<USessionSlotWidget>(this, SessionSlotWidgetClass_);
+		NewSlot->SetSessionData(Result);
+		NewSlot->SetSessionName(SessionName);
+		NewSlot->SetUserCount(CurrUserCount, UserCount);
+		NewSlot->SetMapThumbnail(MapThumbnail);
+		NewSlot->SetIsPrivateSession(IsSettingExist);
+		SCB_SessionList_->AddChild(NewSlot);
 	}
 }
 #undef LOCTEXT_NAMESPACE

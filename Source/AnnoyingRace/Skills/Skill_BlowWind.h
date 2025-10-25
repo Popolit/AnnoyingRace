@@ -22,5 +22,5 @@ private:
 		float KnockbackAmount_ = 500.f;
 	
 	UPROPERTY(EditDefaultsOnly)
-		float SelfKnockbackAmount_ = 500.f;
+		float SelfKnockbackAmount_ = 8000.f;
 };

@@ -2,8 +2,7 @@
 
 #include "Components/ShapeComponent.h"
 #include "Components/SkillComponent.h"
-#include "Engine/DamageEvents.h"
-#include "Kismet/GameplayStatics.h"
+#include "Skills/RaceDamageEvent.h"
 
 
 AHitBox::AHitBox()
@@ -40,7 +39,6 @@ void AHitBox::EnableCollisions()
 	for (auto Elem : ShapeComponents)
 	{
 		UShapeComponent* Collision = Cast<UShapeComponent>(Elem);
-		Collision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		if (Collision)
 		{
 			Collision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -65,8 +63,7 @@ void AHitBox::OnCollisionOverlapped(UPrimitiveComponent* _OverlappedComponent, A
 	const USkillComponent* SkillComp = Cast<USkillComponent>(OwnerActor->GetComponentByClass(USkillComponent::StaticClass()));
 	check(SkillComp);
 
-	FPointDamageEvent DamageEvent;
-	DamageEvent.HitInfo = _SweepResult;
-	DamageEvent.ShotDirection = KnockbackVector_;
-	UGameplayStatics::ApplyPointDamage(_OtherActor, SkillComp->GetSkillDamage(), _SweepResult.TraceStart - _SweepResult.TraceEnd, _SweepResult, OwnerActor->GetInstigatorController(), OwnerActor, DamageEvent.DamageTypeClass);
+	FRaceDamageEvent DamageEvent;
+	DamageEvent.KnockbackVector_ = KnockbackVector_;
+	_OtherActor->TakeDamage(SkillComp->GetSkillDamage(), DamageEvent, OwnerActor->GetInstigatorController(), OwnerActor);
 }

@@ -4,12 +4,8 @@
 #include "SessionGameState.h"
 #include "SessionPlayerController.h"
 #include "Session_UserSlot.h"
-#include "GameFramework/PlayerState.h"
-#include "Animation/WidgetAnimation.h"
 #include "Components/Button.h"
-#include "Components/CheckBox.h"
 #include "Components/ComboBoxString.h"
-#include "Components/EditableText.h"
 #include "Components/EditableTextBox.h"
 #include "Components/Image.h"
 #include "Components/ScrollBox.h"
@@ -25,12 +21,9 @@ void USessionWidget::NativeConstruct()
 
 	//Delegations
 	VB_UserList_->ClearChildren();
-	CBB_MapList_->OnSelectionChanged.AddDynamic(this, &USessionWidget::OnMapChanged);
 	Btn_Ready_->OnClicked.AddDynamic(this, &USessionWidget::OnClickedReadyBtn);
 	Btn_Back_->OnClicked.AddDynamic(this, &USessionWidget::OnClickedBackBtn);
-	EDT_SessionName_->OnTextCommitted.AddDynamic(this, &USessionWidget::OnSessionNameChanged);
-	ETB_Password_->OnTextCommitted.AddDynamic(this, &USessionWidget::OnPasswordChanged);
-	CHB_IsPrivate_->OnCheckStateChanged.AddDynamic(this, &USessionWidget::OnPrivateStateChanged);
+	Btn_Public_->OnClicked.AddDynamic(this, &USessionWidget::OnClickedPublicBtn);
 	ETB_Chat_->OnTextCommitted.AddDynamic(this, &USessionWidget::OnPlayerChatted);
 
 	auto GS = GetWorld()->GetGameState<ASessionGameState>();
@@ -38,6 +31,7 @@ void USessionWidget::NativeConstruct()
 
 	GS->OnSessionInfoUpdated_.BindUObject(this, &USessionWidget::UpdateSessionInfo);
 	GS->OnPlayerListUpdated_.BindUObject(this, &USessionWidget::UpdatePlayerList);
+	UpdatePlayerList(GS->GetPlayerList());
 
 	//Animation Count
 	Count_ = FCString::Atoi(*Txt_CountDown_->GetText().ToString());
@@ -67,33 +61,48 @@ void USessionWidget::OnAnimationFinished_Implementation(const UWidgetAnimation* 
 		return;
 	}
 
-	FString MapDisplayName = CBB_MapList_->GetSelectedOption();
-	if (MapDisplayName.IsEmpty())
+	auto GS = GetWorld()->GetGameState<ASessionGameState>();
+	if (nullptr == GS)
 	{
 		return;
 	}
+	
+	FSessionInfo SessionInfo = GS->GetSessionInfo();
+	
 	auto& AssetManager = UAssetManager::Get();
 	TArray<FPrimaryAssetId> MapAssetIds;
 	AssetManager.GetPrimaryAssetIdList("MapData", MapAssetIds);
 	
-	FPrimaryAssetId SelectedMapAssetId;
-	//Random인 경우
-	if (MapDisplayName == "Random")
+	FPrimaryAssetId SelectedMapAssetId = SessionInfo.SelectedMapData_;
+	auto MapData = Cast<UMapData>(AssetManager.GetPrimaryAssetObject(SelectedMapAssetId));
+
+	if (ensureMsgf(MapData, TEXT("MapData was Invalid")))
 	{
-		//Random 제외하고 1~Max 사이의 값
-		int32 RandomIndex = FMath::RandRange(1, MapAssetIds.Num() - 1);
-		MapDisplayName = CBB_MapList_->GetOptionAtIndex(RandomIndex);
-	}
-	//일치하는 맵을 검색
-	for (const auto& AssetId : MapAssetIds)
-	{
-		auto MapData = Cast<UMapData>(AssetManager.GetPrimaryAssetObject(AssetId));
-		if (MapData && MapData->MapDisplayName_.ToString() == MapDisplayName)
+		//Random을 고른 경우, Random을 제외한 무작위 맵 선정
+		if (MapData->MapDisplayName_.ToString() == "Random")
 		{
-			SelectedMapAssetId = MapData->MapAssetId_;
+			uint8 Index = FMath::RandRange(0, MapAssetIds.Num() - 2);
+			
+			uint8 IndexOfRandom;
+			for (uint8 i = 0; i < MapAssetIds.Num(); i++)
+			{
+				if (MapAssetIds[i] == SelectedMapAssetId)
+				{
+					IndexOfRandom = i;
+					break;
+				}
+			}
+
+			if (IndexOfRandom <= Index)
+			{
+				Index++;
+			}
+
+			SelectedMapAssetId = MapAssetIds[Index];
+			MapData = Cast<UMapData>(AssetManager.GetPrimaryAssetObject(SelectedMapAssetId));
 		}
+		PC->RequestServerTravel(MapData->MapAssetId_);
 	}
-	PC->RequestServerTravel(SelectedMapAssetId);
 }
 
 void USessionWidget::AddChatOnLog(const FText& _Chat, const FString& _PlayerName)
@@ -115,10 +124,7 @@ void USessionWidget::BeginCountDown()
 	if (PC && PC->HasAuthority())
 	{
 		PC->RequestSetSessionJoinable(false);
-		EDT_SessionName_->SetIsReadOnly(true);
-		CBB_MapList_->SetIsEnabled(false);
-		ETB_Password_->SetIsEnabled(false);
-		CHB_IsPrivate_->SetIsEnabled(false);
+		Btn_Public_->SetIsEnabled(false);
 	}
 }
 
@@ -134,82 +140,46 @@ void USessionWidget::StopCountDown()
 	if (PC && PC->HasAuthority())
 	{
 		PC->RequestSetSessionJoinable(true);
-		EDT_SessionName_->SetIsReadOnly(false);
-		CBB_MapList_->SetIsEnabled(true);
-		ETB_Password_->SetIsEnabled(true);
-		CHB_IsPrivate_->SetIsEnabled(true);
+		Btn_Public_->SetIsEnabled(true);
 	}
 }
 
 void USessionWidget::OnMapsLoaded()
 {
-	bMapsLoaded_ = true;
-	
-	auto& AssetManager = UAssetManager::Get();
-	TArray<FPrimaryAssetId> MapAssetDatas;
-	AssetManager.GetPrimaryAssetIdList("MapData", MapAssetDatas);
-	TArray<FString> TempMapNames;
-	for (const auto& AssetId : MapAssetDatas)
+	auto GS = GetWorld()->GetGameState<ASessionGameState>();
+	if (nullptr == GS)
 	{
-		auto MapData = Cast<UMapData>(AssetManager.GetPrimaryAssetObject(AssetId));
-		if (ensureMsgf(MapData, TEXT("Map Data was nullptr")))
-		{
-			//Random을 첫 요소로 고정
-			if (MapData->MapDisplayName_.ToString() == "Random")
-			{
-				CBB_MapList_->AddOption(MapData->MapDisplayName_.ToString());
-			}
-			else
-			{
-				TempMapNames.Add(MapData->MapDisplayName_.ToString());
-			}
-		}
-	}
-	TempMapNames.Sort();
-	//Random 제외한 맵 이름
-	for (const FString& MapName : TempMapNames)
-	{
-		CBB_MapList_->AddOption(MapName);
+		return;
 	}
 
-	if (CachedMap_.IsValid())
+	FSessionInfo SessionInfo = GS->GetSessionInfo();
+	FPrimaryAssetId MapId = SessionInfo.SelectedMapData_;
+	
+	auto& AssetManager = UAssetManager::Get();
+	auto MapData = Cast<UMapData>(AssetManager.GetPrimaryAssetObject(MapId));
+	if (ensureMsgf(MapData, TEXT("Map Data was nullptr")))
 	{
-		for (const auto& AssetId : MapAssetDatas)
-		{
-			if (AssetId == CachedMap_)
-			{
-				auto MapData = Cast<UMapData>(AssetManager.GetPrimaryAssetObject(AssetId));
-				CBB_MapList_->SetSelectedOption(MapData->MapDisplayName_.ToString());
-			}
-		}
+		Img_Map_->SetBrushFromSoftTexture(MapData->MapThumbnail_);
+		Txt_Map_->SetText(MapData->MapDisplayName_);
 	}
 }
 
+
+//현재 advertisement 상태인 Session 정보를 갱신할 수 없어, 공개방 여부만을 갱신하고 있음.
+//차후 인원 수 변동 / 맵 변경 등의 기능이 추가될 수 있음.
 void USessionWidget::UpdateSessionInfo(const FSessionInfo& _SessionInfo)
 {
-	EDT_SessionName_->SetText(FText::FromString(_SessionInfo.SessionName_));
-	ETB_Password_->SetText(FText::FromString(_SessionInfo.Password_));
-	CHB_IsPrivate_->SetCheckedState(_SessionInfo.bIsPrivate_ ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
-	ETB_Password_->SetIsReadOnly(!_SessionInfo.bIsPrivate_);
+	Txt_SessionName_->SetText(FText::FromString(_SessionInfo.SessionName_));
 	
-	if (false == bMapsLoaded_)
+	if (_SessionInfo.bIsPrivate_)
 	{
-		CachedMap_ = _SessionInfo.SelectedMapData_;
-		return;
+		Img_Private_->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+		Btn_Public_->SetIsEnabled(true);
 	}
-	
-	//일치하는 맵을 검색
-	auto& AssetManager = UAssetManager::Get();
-	TArray<FPrimaryAssetId> MapAssetIds;
-	AssetManager.GetPrimaryAssetIdList(TEXT("MapData"), MapAssetIds);
-	for (const auto& AssetId : MapAssetIds)
+	else
 	{
-		if (AssetId == _SessionInfo.SelectedMapData_)
-		{
-			auto MapData = Cast<UMapData>(AssetManager.GetPrimaryAssetObject(AssetId));
-			CBB_MapList_->SetSelectedOption(MapData->MapDisplayName_.ToString());
-			Img_Map_->SetBrushFromSoftTexture(MapData->MapThumbnail_);
-		}
+		Img_Private_->SetVisibility(ESlateVisibility::Collapsed);
+		Btn_Public_->SetIsEnabled(false);
 	}
 }
 
@@ -260,31 +230,10 @@ void USessionWidget::UpdateUIForHost()
 	if (PC)
 	{
 		bool bIsHost = PC->HasAuthority();
-		EDT_SessionName_->SetIsReadOnly(!bIsHost);
-		ETB_Password_->SetVisibility(bIsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-		CHB_IsPrivate_->SetIsEnabled(bIsHost);
-		CBB_MapList_->SetIsEnabled(bIsHost);
+		Btn_Public_->SetVisibility(bIsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 	}
 }
 
-void USessionWidget::OnMapChanged(FString _SelectedMap, ESelectInfo::Type _SelectionType)
-{
-	auto& AssetManager = UAssetManager::Get();
-	TArray<FPrimaryAssetId> MapAssetIds;
-	AssetManager.GetPrimaryAssetIdList(TEXT("MapData"), MapAssetIds);
-	for (const auto& AssetId : MapAssetIds)
-	{
-		auto MapData = Cast<UMapData>(AssetManager.GetPrimaryAssetObject(AssetId));
-		if (MapData && MapData->MapDisplayName_.ToString() == _SelectedMap)
-		{
-			auto GS = GetWorld()->GetGameState<ASessionGameState>();
-			if (GS)
-			{
-				GS->SetMap(AssetId);
-			}
-		}
-	}
-}
 
 void USessionWidget::OnClickedReadyBtn()
 {
@@ -293,6 +242,16 @@ void USessionWidget::OnClickedReadyBtn()
 	if (PC)
 	{
 		PC->Server_RequestToggleReady();
+	}
+}
+
+void USessionWidget::OnClickedPublicBtn()
+{
+	auto PC = Cast<ASessionPlayerController>(GetOwningPlayer());
+
+	if (PC && PC->HasAuthority())
+	{
+		PC->Server_RequestMakeSessionPublic();
 	}
 }
 
@@ -305,35 +264,6 @@ void USessionWidget::OnClickedBackBtn()
 	}
 }
 
-void USessionWidget::OnSessionNameChanged(const FText& _Text, ETextCommit::Type _CommitMethod)
-{
-	auto PC = Cast<ASessionPlayerController>(GetOwningPlayer());
-
-	if (PC)
-	{
-		PC->RequestChangeSessionName(_Text.ToString());
-	}
-}
-
-void USessionWidget::OnPasswordChanged(const FText& _Text, ETextCommit::Type _CommitMethod)
-{
-	auto PC = Cast<ASessionPlayerController>(GetOwningPlayer());
-
-	if (PC)
-	{
-		PC->RequestChangeSessionPassword(_Text.ToString());
-	}
-}
-
-void USessionWidget::OnPrivateStateChanged(bool _bChecked)
-{
-	auto PC = Cast<ASessionPlayerController>(GetOwningPlayer());
-
-	if (PC)
-	{
-		PC->RequestChangeSessionIsPrivate(_bChecked, ETB_Password_->GetText().ToString());
-	}
-}
 
 void USessionWidget::OnPlayerChatted(const FText& _Text, ETextCommit::Type _CommitMethod)
 {

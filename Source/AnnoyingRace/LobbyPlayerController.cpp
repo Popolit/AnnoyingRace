@@ -4,6 +4,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "RaceGameInstance.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/AudioComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "UI/OptionWidget.h"
@@ -17,6 +18,9 @@ class URaceGameInstance;
 ALobbyPlayerController::ALobbyPlayerController()
 {
 	SetActorTickEnabled(false);
+	
+	AudioComponent_ = CreateDefaultSubobject<UAudioComponent>("Audio");
+	AudioComponent_->SetupAttachment(GetRootComponent());
 }
 
 void ALobbyPlayerController::BeginPlay()
@@ -35,7 +39,9 @@ void ALobbyPlayerController::BeginPlay()
 		auto WorldSettings = Cast<ARaceWorldSettings>(GetWorldSettings());
 		if (ensureMsgf(WorldSettings && WorldSettings->WorldBGM_, TEXT("World Settings' BGM was not set")))
 		{
-			UGameplayStatics::PlaySound2D(this, WorldSettings->WorldBGM_);
+			check(AudioComponent_);
+			AudioComponent_->SetSound(WorldSettings->WorldBGM_);
+			AudioComponent_->Play();
 		}
 	}
 	WidgetStack_.Push(LobbyWidget_);
@@ -250,6 +256,10 @@ void ALobbyPlayerController::OpenMessageDialogue(const FText& _Message)
 		SetInputMode(InputMode);
 		WidgetStack_.Push(MessageDialogueWidget_);
 	}
+}
+
+void ALobbyPlayerController::OpenPasswordDialogue()
+{
 }
 
 void ALobbyPlayerController::CloseOption()

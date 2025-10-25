@@ -95,14 +95,6 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category=Session)
 	FString SessionName;
 
-	/* Modified by Project AR */
-	UPROPERTY(BlueprintReadWrite, Category=Session)
-	bool bIsPrivate;
-
-	/* Modified by Project AR */
-	UPROPERTY(BlueprintReadWrite, Category=Session)
-	FString Password;
-
 	/* Modified by ProjectAR */
 	UPROPERTY(BlueprintReadWrite, Category=Session)
 	FPrimaryAssetId MapData;

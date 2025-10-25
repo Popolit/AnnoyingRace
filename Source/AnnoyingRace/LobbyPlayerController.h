@@ -45,6 +45,8 @@ public:
 	UFUNCTION()
 		void OpenMessageDialogue(const FText& _Message);
 
+	void OpenPasswordDialogue();
+
 private:
 	void CloseOption();
 
@@ -75,6 +77,9 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 		TSubclassOf<class UMessageDialogueWidget> MessageDialogueWidgetClass_;
 	
+	//UPROPERTY(EditDefaultsOnly)
+	//	TSubclassOf<class UMessageDialogueWidget> MessageDialogueWidgetClass_;
+
 	UPROPERTY()
 		TObjectPtr<UUserWidget> LobbyWidget_;
 
@@ -94,6 +99,9 @@ private:
 		TObjectPtr<UMessageDialogueWidget> MessageDialogueWidget_;
 	
 private:
+	UPROPERTY(VisibleDefaultsOnly)
+		TObjectPtr<class UAudioComponent> AudioComponent_;
+	
 	UPROPERTY(EditDefaultsOnly)
 		TObjectPtr<class UInputMappingContext> IMC_Default_;
 

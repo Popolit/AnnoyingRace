@@ -1,6 +1,5 @@
 #include "RaceGameInstance.h"
 
-#include "SessionData.h"
 #include "CommonSessionSubsystem.h"
 
 #define LOCTEXT_NAMESPACE "ErrorMessages"
@@ -41,8 +40,6 @@ void URaceGameInstance::CreateSession(APlayerController* _PC, const FSessionData
 			SessionRequest->MapID = SessionMap_;
 			SessionRequest->SessionName = _SessionData.SessionName_;
 			SessionRequest->MapData = _SessionData.MapData_;
-			SessionRequest->bIsPrivate = _SessionData.bPrivate_;
-			SessionRequest->Password = _SessionData.Password_;
 			SessionSubsystem_->HostSession(_PC, SessionRequest);
 		}
 	}
@@ -58,6 +55,14 @@ void URaceGameInstance::FindSessions(APlayerController* _PC)
 			SearchSessionRequest_->OnSearchFinished.AddUObject(this, &URaceGameInstance::OnFindSessionsComplete);
 			SessionSubsystem_->FindSessions(_PC, SearchSessionRequest_);
 		}
+	}
+}
+
+void URaceGameInstance::JoinSessionWithResult(APlayerController* _PC, UCommonSession_SearchResult* _SearchResult)
+{
+	if (_PC && SessionSubsystem_)
+	{
+		SessionSubsystem_->JoinSession(_PC, _SearchResult);
 	}
 }
 

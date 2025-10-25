@@ -4,6 +4,8 @@
 #include "Blueprint/UserWidget.h"
 #include "WaitingPlayersWidget.generated.h"
 
+DECLARE_DELEGATE()
+
 /**
  * Waiting Players After Begin Play
  */

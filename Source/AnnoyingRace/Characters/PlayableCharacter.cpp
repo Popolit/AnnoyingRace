@@ -8,9 +8,10 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "RacePlayerController.h"
+#include "Components/AudioComponent.h"
 #include "Components/SkillComponent.h"
 #include "Components/StatusComponent.h"
-#include "Engine/DamageEvents.h"
+#include "Skills/RaceDamageEvent.h"
 
 
 APlayableCharacter::APlayableCharacter()
@@ -64,6 +65,11 @@ void APlayableCharacter::SetupPlayerInputComponent(UInputComponent* _PlayerInput
 	}
 }
 
+void APlayableCharacter::LaunchCharacter(FVector _LaunchVelocity, bool _bXYOverride, bool _bZOverride)
+{
+	Server_LaunchCharacter(_LaunchVelocity , _bXYOverride , _bZOverride);
+}
+
 float APlayableCharacter::TakeDamage(float _DamageAmount, FDamageEvent const& _DamageEvent, AController* _EventInstigator, AActor* _DamageCauser)
 {
 	StateComponent_->TakeDamage(this, _DamageAmount, _DamageEvent, _EventInstigator, _DamageCauser);
@@ -74,11 +80,11 @@ float APlayableCharacter::TakeDamage(float _DamageAmount, FDamageEvent const& _D
 void APlayableCharacter::ProcessHit(uint8 _DamageAmount, FDamageEvent const& _DamageEvent)
 {
 	StatusComponent_->DamageToHP(_DamageAmount);
-	const FPointDamageEvent* PointDamageEvent = static_cast<const FPointDamageEvent*>(&_DamageEvent);
+	const FRaceDamageEvent* RaceDamageEvent = static_cast<const FRaceDamageEvent*>(&_DamageEvent);
 
-	if (PointDamageEvent)
+	if (RaceDamageEvent)
 	{
-		LaunchCharacter(PointDamageEvent->ShotDirection, true, false);
+		LaunchCharacter(RaceDamageEvent->KnockbackVector_ , true, false);
 	}
 	
 	//사망했는지 확인
@@ -99,11 +105,20 @@ void APlayableCharacter::SkillButtonPushed()
 	OnSkillButtonPushed_.ExecuteIfBound(this);
 }
 
+//장외로 떨어질 시 사망 처리
+void APlayableCharacter::FellOutOfWorld(const UDamageType& _DmgType)
+{
+	if (HasAuthority() && false == StateComponent_->CheckCurrentState(EState::Death))
+	{
+		ProcessDeath();
+	}
+}
+
 void APlayableCharacter::ProcessDeath()
 {
 	if (HasAuthority())
 	{
-		ARacePlayerController* PC = Cast <ARacePlayerController >(GetController());
+		ARacePlayerController* PC = Cast <ARacePlayerController>(GetController());
 		check(PC);
 
 		if (ARaceGameMode* GM = GetWorld()->GetAuthGameMode<ARaceGameMode>())
@@ -147,6 +162,12 @@ void APlayableCharacter::Multicast_PlayAnimMontage_Implementation(UAnimMontage* 
 }
 
 
+void APlayableCharacter::Server_LaunchCharacter_Implementation(const FVector& _LaunchVelocity, bool _bXYOverride,
+	bool _bZOverride)
+{
+	Super::LaunchCharacter(_LaunchVelocity, _bXYOverride, _bZOverride);
+}
+
 void APlayableCharacter::CreateAllComponents()
 {
 	SpringArmComponent_ = CreateDefaultSubobject<USpringArmComponent>("SpringArm");
@@ -157,9 +178,10 @@ void APlayableCharacter::CreateAllComponents()
 
 	ObservingCamera_ = CreateDefaultSubobject<UCameraComponent>("Observing Camera");
 	ObservingCamera_->SetupAttachment(GetRootComponent());
-
+	
 	StateComponent_ = CreateDefaultSubobject<UStateComponent>("State");
 	StatusComponent_ = CreateDefaultSubobject<UStatusComponent>("Status");
 	SkillComponent_ = CreateDefaultSubobject<USkillComponent>("Skill");
+	
 }
 

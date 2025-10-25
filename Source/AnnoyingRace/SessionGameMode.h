@@ -24,13 +24,9 @@ protected:
 
 public:
 	void SetSessionJoinable(bool _bCanJoin);
+
+	void MakeSessionPublic();
 	
-	void ChangeSessionName(const FString& _SessionName);
-
-	void ChangeSessionPassword(const FString& _SessionPassword);
-
-	void ChangeSessionIsPrivate(bool _bIsPrivate, const FString& _SessionPassword);
-
 	void RequestChat(const FText& _Chat, const FString& _ChatterName);
 
 private:
@@ -38,8 +34,7 @@ private:
 
 	void InitializeSession();
 
+	void OnSessionUpdated(FName _SessionName, bool _bWasSuccessful);
+
 	TSharedPtr<class IOnlineSession, ESPMode::ThreadSafe> GetSessionInterface();
-	
-private:
-	FTimerHandle GameStartTimerHandle;
 };

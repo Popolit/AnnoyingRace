@@ -45,8 +45,7 @@ public:
 		SelectedMapData_(),
 		MaxUserCount_(8),
 		CurrentUserCount_(1),
-		bIsPrivate_(false),
-		Password_() {}
+		bIsPrivate_(false) {}
 	
 	UPROPERTY()
 		FString SessionName_;
@@ -62,9 +61,6 @@ public:
 
 	UPROPERTY()
 		bool bIsPrivate_;
-	
-	UPROPERTY()
-		FString Password_;
 };
 
 
@@ -85,8 +81,10 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 public:
-	void InitializeSession(const FSessionInfo& _SessionInfo);
-    
+	void UpdateSession(const FSessionInfo& _SessionInfo);
+
+	const FSessionInfo& GetSessionInfo() const;
+	
 	void AddPlayer(const APlayerState* _PlayerState);
     
 	void RemovePlayer(const APlayerState* _PlayerState);
@@ -95,13 +93,7 @@ public:
 
 	void SetHost(const FUniqueNetIdRepl& _HostId);
 
-	void ChangeSessionName(const FString& _SessionName);
-
-	void ChangeSessionPassword(const FString& _SessionPassword);
-
-	void ChangeSessionIsPrivate(bool _bIsPrivate);
-
-	void SetMap(const FPrimaryAssetId& _MapId);
+	TArray<FSessionPlayerInfo> GetPlayerList() const;
 
 private:
 	void CheckAllPlayersReady();

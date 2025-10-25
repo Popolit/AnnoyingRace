@@ -20,6 +20,12 @@ private:
 		void OnMapChanged(FString _MapName, ESelectInfo::Type _Type);
 
 	UFUNCTION()
+		void OnSessionNameChanged(const FText& _Text);
+	
+	UFUNCTION()
+		void OnSessionNameCommitted(const FText& _Text, ETextCommit::Type _CommitMethod);
+
+	UFUNCTION()
 		void OnMinUserChanged(const FText& _Text);
 	
 	UFUNCTION()
@@ -65,6 +71,9 @@ private:
 		TSubclassOf<class USessionSlotWidget> SessionSlotWidgetClass_;
 
 private:
+	UPROPERTY()
+		TArray<UCommonSession_SearchResult*> Results_;
+	
 	FText LastValidMinUserCount_;
 	FText LastValidMaxUserCount_;
 };

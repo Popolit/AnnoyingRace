@@ -1,10 +1,9 @@
 #include "SessionSlotWidget.h"
 
-#include "CommonSessionSubsystem.h"
+#include "RaceGameInstance.h"
 #include "Components/Button.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
-#include "Kismet/GameplayStatics.h"
 
 
 void USessionSlotWidget::NativeConstruct()
@@ -16,27 +15,25 @@ void USessionSlotWidget::NativeConstruct()
 
 void USessionSlotWidget::SetSessionData(UCommonSession_SearchResult* _SessionSearchResult)
 {
-	if (nullptr == _SessionSearchResult)
-	{
-		return;
-	}
-
 	SessionSearchResult_ = _SessionSearchResult;
+}
 
-	//Session Name
-	bool IsSettingExist;
-	_SessionSearchResult->GetStringSetting(TEXT("SESSION_NAME"), SessionName_, IsSettingExist);
-	if (ensureMsgf(IsSettingExist, TEXT("Session Name Setting was not found")))
-	{
-		Txt_SessionName_->SetText(FText::FromString(SessionName_));
-	}
+void USessionSlotWidget::SetSessionName(const FString& _SessionName)
+{
+	Txt_SessionName_->SetText(FText::FromString(_SessionName));
+}
 
-	//Get Private Password
-	_SessionSearchResult->GetStringSetting(TEXT("PASSWORD"), SessionPassword_, IsSettingExist);
+void USessionSlotWidget::SetUserCount(int32 _CurrUserCount, int32 _MaxUserCount)
+{
+	FFormatNamedArguments Args;
+	Args.Add(TEXT("Curr"), FText::AsNumber(_CurrUserCount));
+	Args.Add(TEXT("Max"), FText::AsNumber(_MaxUserCount));
+	Txt_UserCount_->SetText(FText::Format(FText::FromString(TEXT("{Curr} / {Max}")), Args));
+}
 
-	bSessionLocked_ = IsSettingExist;
-	//Private Session
-	if (bSessionLocked_)
+void USessionSlotWidget::SetIsPrivateSession(bool _bPrivate)
+{
+	if (_bPrivate)
 	{
 		Img_Lock_->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
@@ -45,40 +42,11 @@ void USessionSlotWidget::SetSessionData(UCommonSession_SearchResult* _SessionSea
 	{
 		Img_Lock_->SetVisibility(ESlateVisibility::Collapsed);
 	}
-
-	FString MapDataString;
-	_SessionSearchResult->GetStringSetting(TEXT("MAPDATA"), MapDataString, IsSettingExist);
-
-	if(IsSettingExist)
-	{
-		MapData_ = FPrimaryAssetId(MapDataString);
-	}
-	FFormatNamedArguments Args;
-	MaxUserCount_ = _SessionSearchResult->GetMaxPublicConnections();
-	int32 CurrUserCount = MaxUserCount_ - _SessionSearchResult->GetNumOpenPublicConnections();
-	Args.Add(TEXT("Curr"), FText::AsNumber(CurrUserCount));
-	Args.Add(TEXT("Max"), FText::AsNumber(MaxUserCount_));
-	Txt_UserCount_->SetText(FText::Format(FText::FromString(TEXT("{Curr} / {Max}")), Args));
 }
 
-FString USessionSlotWidget::GetSessionName()
+void USessionSlotWidget::SetMapThumbnail(const TSoftObjectPtr<UTexture2D>& _MapThumbnail)
 {
-	return SessionName_;
-}
-
-int32 USessionSlotWidget::GetMaxUserCount() const
-{
-	return MaxUserCount_;
-}
-
-bool USessionSlotWidget::IsSessionLocked() const
-{
-	return bSessionLocked_;
-}
-
-FPrimaryAssetId USessionSlotWidget::GetMapData() const
-{
-	return MapData_;
+	Img_Map_->SetBrushFromSoftTexture(_MapThumbnail);
 }
 
 //Session에 참가
@@ -89,19 +57,9 @@ void USessionSlotWidget::OnClickedEnter()
 		ensureMsgf(false, TEXT("SessionSearchResult was null"));
 		return;
 	}
-	UGameInstance* GI = UGameplayStatics::GetGameInstance(this);
+	URaceGameInstance* GI = GetGameInstance<URaceGameInstance>();
 	if (GI)
 	{
-		UCommonSessionSubsystem* SessionSubsystem = GI->GetSubsystem<UCommonSessionSubsystem>();
-		APlayerController* PC = GetOwningPlayer();
-
-		if (ensure(SessionSubsystem && PC))
-		{
-			if (false == SessionPassword_.IsEmpty())
-			{
-				//비밀번호 Dialogue
-			}
-			SessionSubsystem->JoinSession(PC, SessionSearchResult_.Get());
-		}
+		GI->JoinSessionWithResult(GetOwningPlayer(), SessionSearchResult_.Get());
 	}
 }

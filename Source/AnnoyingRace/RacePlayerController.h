@@ -13,27 +13,27 @@ class ANNOYINGRACE_API ARacePlayerController : public APlayerController
 	GENERATED_BODY()
 	
 protected:
+	ARacePlayerController();
+
+	virtual void BeginPlay() override;
+	
 	virtual void OnPossess(APawn* _Pawn) override;
 
 	virtual void OnUnPossess() override;
 
 	virtual void SetupInputComponent() override;
 
-public:
-	void PlaySequence(const FName& _SequenceName);
+	virtual void OnRep_PlayerState() override;
 
+public:
 	UFUNCTION(Client, Reliable)
-	void Client_PlaySound2D(class USoundCue* _Sound);
+		void Client_PlaySound2D(class USoundCue* _Sound);
 
 	//Transform에서 관전자 모드 시작
 	void SetSpectatorMode(const FTransform& _TransformToSpectate);
 
 	//UI관련 함수들
 public:
-	void OpenWaitingPlayersUI();
-
-	void CloseWaitingPlayersUI();
-
 	void OpenMainMenu();
 
 	UFUNCTION()
@@ -56,6 +56,15 @@ private:
 	//Client 함수들
 public:
 	UFUNCTION(Client, Reliable)
+		void Client_PlaySequence(const FName& _SequenceName);
+	
+	UFUNCTION(Client, Reliable)
+		void Client_OpenWaitingPlayersUI();
+
+	UFUNCTION(Client, Reliable)
+		void Client_CloseWaitingPlayersUI();
+	
+	UFUNCTION(Client, Reliable)
 		void Client_EnableCharacterInput();
 
 	UFUNCTION(Client, Reliable)
@@ -71,6 +80,9 @@ public:
 		void Client_ShowCharacterDrawResult(const class UCharacterData* _DrawnCharacterData);
 
 private:
+	UFUNCTION(Server, Reliable)
+		void Server_NotifyPlayerIsReady();
+	
 	UFUNCTION(Server, Reliable)
 		void Server_RequestDrawCharacter();
 
@@ -139,6 +151,12 @@ private:
 		TObjectPtr<UExitDialogueWidget> ExitDialogueWidget_;
 
 private:
+	UPROPERTY(VisibleDefaultsOnly)
+		TObjectPtr<class UAudioComponent> AudioComponent_;
+
+	UPROPERTY(EditDefaultsOnly)
+		TObjectPtr<USoundMix> SoundMix_;
+	
 	UPROPERTY()
 		TObjectPtr<class ATrackSplineActor> TrackSplineActor_;
 

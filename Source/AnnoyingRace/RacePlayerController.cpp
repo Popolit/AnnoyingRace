@@ -7,6 +7,7 @@
 #include "LevelSequenceActor.h"
 #include "LevelSequencePlayer.h"
 #include "RacePlayerState.h"
+#include "Components/AudioComponent.h"
 #include "GameFramework/GameUserSettings.h"
 #include "GameFramework/SpectatorPawn.h"
 #include "Kismet/GameplayStatics.h"
@@ -17,7 +18,33 @@
 #include "UI/ExitDialogueWidget.h"
 #include "UI/OptionWidget.h"
 #include "UserSettings/EnhancedInputUserSettings.h"
+#include "World/RaceWorldSettings.h"
 #include "World/TrackSplineActor.h"
+
+
+ARacePlayerController::ARacePlayerController()
+{
+	AudioComponent_ = CreateDefaultSubobject<UAudioComponent>("Audio");
+	AudioComponent_->SetupAttachment(GetRootComponent());
+}
+
+void ARacePlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	//BGM재생
+	if (ensureMsgf(SoundMix_, TEXT("Race Controller's SoundMix was not set")))
+	{
+		UGameplayStatics::PushSoundMixModifier(this, SoundMix_);
+		auto WorldSettings = Cast<ARaceWorldSettings>(GetWorldSettings());
+		if (ensureMsgf(WorldSettings && WorldSettings->WorldBGM_, TEXT("World Settings' BGM was not set")))
+		{
+			check(AudioComponent_);
+			AudioComponent_->SetSound(WorldSettings->WorldBGM_);
+			AudioComponent_->Play();
+		}
+	}
+}
 
 void ARacePlayerController::OnPossess(APawn* _Pawn)
 {
@@ -74,19 +101,11 @@ void ARacePlayerController::SetupInputComponent()
 	}
 }
 
-void ARacePlayerController::PlaySequence(const FName& _SequenceName)
+//클라이언트 준비됨
+void ARacePlayerController::OnRep_PlayerState()
 {
-	TArray<AActor*> OutActors;
-	UGameplayStatics::GetAllActorsOfClassWithTag(this, ALevelSequenceActor::StaticClass(), _SequenceName, OutActors);
-
-	if (ensureMsgf(OutActors.IsValidIndex(0), TEXT("Level SequenceTag was Invalid")))
-	{
-		ALevelSequenceActor* SequenceActor = Cast<ALevelSequenceActor>(OutActors[0]);
-		if (ensure(SequenceActor && SequenceActor->GetSequencePlayer()))
-		{
-			SequenceActor->GetSequencePlayer()->Play();
-		}
-	}
+	Super::OnRep_PlayerState();
+	Server_NotifyPlayerIsReady();
 }
 
 void ARacePlayerController::Client_PlaySound2D_Implementation(USoundCue* _Sound)
@@ -108,27 +127,6 @@ void ARacePlayerController::SetSpectatorMode(const FTransform& _TransformToSpect
 		}
 		auto SpawnedPawn = GetWorld()->SpawnActor<ASpectatorPawn>(GM->SpectatorClass, _TransformToSpectate);
 		Possess(SpawnedPawn);
-	}
-}
-
-void ARacePlayerController::OpenWaitingPlayersUI()
-{
-	if ( nullptr == WaitingPlayersWidget_ && ensureMsgf( WaitingPlayersWidgetClass_ , TEXT( "WidgetClass was null" ) ) )
-	{
-		WaitingPlayersWidget_ = CreateWidget( this , WaitingPlayersWidgetClass_ );
-		WaitingPlayersWidget_->AddToViewport();
-	}
-	OpenInteractableWidget( WaitingPlayersWidget_ );
-}
-
-void ARacePlayerController::CloseWaitingPlayersUI()
-{
-	if(WaitingPlayersWidget_ )
-	{
-		WaitingPlayersWidget_->RemoveFromParent();
-		FInputModeGameOnly InputMode;
-		SetInputMode( InputMode );
-		bShowMouseCursor = false;
 	}
 }
 
@@ -224,8 +222,7 @@ void ARacePlayerController::OpenMainMenu()
 
 void ARacePlayerController::ExitGame()
 {
-	//TODO : 차후 로비가 구현된 후 로비로 돌아가도록 수정
-	//TODO : 클라이언트, 호스트가 게임을 종료할 때 적절한 핸들
+	//TODO : Lobby로 돌아가기
 	ConsoleCommand("quit");
 }
 
@@ -283,6 +280,43 @@ void ARacePlayerController::CloseExitDialogue()
 	CloseInteractableWidget(ExitDialogueWidget_);
 }
 
+void ARacePlayerController::Client_PlaySequence_Implementation(const FName& _SequenceName)
+{
+	TArray<AActor*> OutActors;
+	UGameplayStatics::GetAllActorsOfClassWithTag(this, ALevelSequenceActor::StaticClass(), _SequenceName, OutActors);
+
+	if (ensureMsgf(OutActors.IsValidIndex(0), TEXT("Level SequenceTag was Invalid")))
+	{
+		ALevelSequenceActor* SequenceActor = Cast<ALevelSequenceActor>(OutActors[0]);
+		if (ensure(SequenceActor && SequenceActor->GetSequencePlayer()))
+		{
+			SequenceActor->GetSequencePlayer()->Play();
+		}
+	}
+}
+
+void ARacePlayerController::Client_OpenWaitingPlayersUI_Implementation()
+{
+	if ( nullptr == WaitingPlayersWidget_ && ensureMsgf( WaitingPlayersWidgetClass_ , TEXT( "WidgetClass was null" ) ) )
+	{
+		WaitingPlayersWidget_ = CreateWidget( this , WaitingPlayersWidgetClass_ );
+		WaitingPlayersWidget_->AddToViewport();
+	}
+	OpenInteractableWidget( WaitingPlayersWidget_ );
+}
+
+void ARacePlayerController::Client_CloseWaitingPlayersUI_Implementation()
+{
+	if(WaitingPlayersWidget_ )
+	{
+		WaitingPlayersWidget_->RemoveFromParent();
+		FInputModeGameOnly InputMode;
+		SetInputMode( InputMode );
+		bShowMouseCursor = false;
+	}
+}
+
+
 void ARacePlayerController::Server_RequestDrawCharacter_Implementation()
 {
 	ARaceGameMode* GM = Cast<ARaceGameMode>(UGameplayStatics::GetGameMode(this));
@@ -297,6 +331,11 @@ void ARacePlayerController::Server_RequestSpawnCharacter_Implementation()
 }
 
 
+void ARacePlayerController::Server_NotifyPlayerIsReady_Implementation()
+{
+	ARaceGameMode* GM = Cast<ARaceGameMode>(UGameplayStatics::GetGameMode(this));
+	GM->AddReadiedPlayerCount();
+}
 
 void ARacePlayerController::OnDrawAnimationFinished()
 {

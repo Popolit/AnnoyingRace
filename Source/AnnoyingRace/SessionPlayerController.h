@@ -24,6 +24,9 @@ public:
 		void Server_RequestToggleReady();
 
 	UFUNCTION(Server, Reliable)
+		void Server_RequestMakeSessionPublic();
+
+	UFUNCTION(Server, Reliable)
 		void Server_SendChat(const FText& _Chat);
 
 	UFUNCTION(Client, Reliable)
@@ -37,12 +40,6 @@ public:
 
 	void RequestSetSessionJoinable(bool _bCanJoin);
 	
-	void RequestChangeSessionName(const FString& _SessionName);
-
-	void RequestChangeSessionPassword(const FString& _SessionPassword);
-
-	void RequestChangeSessionIsPrivate(bool _bIsPrivate, const FString& _SessionPassword);
-
 	void RequestServerTravel(const FPrimaryAssetId& _MapId);
 
 private:
@@ -51,6 +48,9 @@ private:
 	void CloseMessageDialogue();
 	
 private:
+	UPROPERTY(VisibleDefaultsOnly)
+		TObjectPtr<class UAudioComponent> AudioComponent_;
+	
 	UPROPERTY(EditDefaultsOnly)
 		TSubclassOf<class USessionWidget> SessionWidgetClass_;
 

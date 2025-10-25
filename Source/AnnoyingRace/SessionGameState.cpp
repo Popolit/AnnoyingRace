@@ -21,7 +21,7 @@ void ASessionGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(ASessionGameState, HostId_);
 }
 
-void ASessionGameState::InitializeSession(const FSessionInfo& _SessionInfo)
+void ASessionGameState::UpdateSession(const FSessionInfo& _SessionInfo)
 {
 	if (HasAuthority())
 	{
@@ -29,6 +29,11 @@ void ASessionGameState::InitializeSession(const FSessionInfo& _SessionInfo)
 		PlayerList_.SetNum(SessionInfo_.MaxUserCount_);
 		OnRep_SessionInfo();
 	}
+}
+
+const FSessionInfo& ASessionGameState::GetSessionInfo() const
+{
+	return SessionInfo_;
 }
 
 
@@ -109,40 +114,9 @@ void ASessionGameState::SetHost(const FUniqueNetIdRepl& _HostId)
 	}
 }
 
-void ASessionGameState::ChangeSessionName(const FString& _SessionName)
+TArray<FSessionPlayerInfo> ASessionGameState::GetPlayerList() const
 {
-	if (HasAuthority())
-	{
-		SessionInfo_.SessionName_ = _SessionName;
-		OnRep_SessionInfo();
-	}
-}
-
-void ASessionGameState::ChangeSessionPassword(const FString& _SessionPassword)
-{
-	if (HasAuthority())
-	{
-		SessionInfo_.Password_ = _SessionPassword;
-		OnRep_SessionInfo();
-	}
-}
-
-void ASessionGameState::ChangeSessionIsPrivate(bool _bIsPrivate)
-{
-	if (HasAuthority())
-	{
-		SessionInfo_.bIsPrivate_ = _bIsPrivate;
-		OnRep_SessionInfo();
-	}
-}
-
-void ASessionGameState::SetMap(const FPrimaryAssetId& _MapId)
-{
-	if (HasAuthority() && _MapId.IsValid())
-	{
-		SessionInfo_.SelectedMapData_ = _MapId;
-		OnRep_SessionInfo();
-	}
+	return PlayerList_;
 }
 
 void ASessionGameState::CheckAllPlayersReady()

@@ -17,14 +17,14 @@ protected:
 
 public:
 	void SetSessionData(class UCommonSession_SearchResult* _SessionSearchResult);
+	
+	void SetSessionName(const FString& _SessionName);
 
-	FString GetSessionName();
+	void SetUserCount(int32 _CurrUserCount, int32 _MaxUserCount);
 
-	int32 GetMaxUserCount() const;
+	void SetIsPrivateSession(bool _bPrivate);
 
-	bool IsSessionLocked() const;
-
-	FPrimaryAssetId GetMapData() const;
+	void SetMapThumbnail(const TSoftObjectPtr<UTexture2D>& _MapThumbnail);
 
 private:
 	UFUNCTION()
@@ -45,16 +45,5 @@ private:
 	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<class UButton> Btn_Enter_;
 
-private:
 	TWeakObjectPtr<UCommonSession_SearchResult> SessionSearchResult_;
-
-	FString SessionName_;
-
-	int32 MaxUserCount_;
-
-	bool bSessionLocked_;
-
-	FString SessionPassword_;
-
-	FPrimaryAssetId MapData_;
 };

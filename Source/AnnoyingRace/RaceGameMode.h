@@ -22,9 +22,9 @@ public:
 	virtual void PostLogin(APlayerController* _NewPlayer) override;
 
 	virtual bool ReadyToStartMatch_Implementation() override;
-
-
 public:
+	void AddReadiedPlayerCount();
+	
 	void HandlePlayerDeath(APlayerController* _PC) const;
 
 	//Laps등 변화 없이 캐릭터만 드로우
@@ -53,4 +53,6 @@ private:
 	TObjectPtr<class ATrackSplineActor> TrackSpline_;
 
 	bool bRaceStarted_;
+
+	int32 ReadiedPlayerCount_ = 1;
 };

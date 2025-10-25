@@ -536,7 +536,8 @@ void UCommonSessionSubsystem::CreateOnlineSessionInternalOSSv1(ULocalPlayer* Loc
 	if (ensure(UserId.IsValid()))
 	{
 		FCommonSession_OnlineSessionSettings HostSettings(Request->OnlineMode == ECommonSessionOnlineMode::LAN, Request->bUsePresence, MaxPlayers);
-		HostSettings.NumPublicConnections = Request->MaxPlayerCount;
+		HostSettings.NumPublicConnections = 1;
+		HostSettings.NumPrivateConnections = Request->MaxPlayerCount - 1;
 		HostSettings.bIsLANMatch = Request->OnlineMode == ECommonSessionOnlineMode::LAN;
 		HostSettings.bUsesPresence = Request->bUsePresence;
 		HostSettings.bShouldAdvertise = true;
@@ -553,10 +554,6 @@ void UCommonSessionSubsystem::CreateOnlineSessionInternalOSSv1(ULocalPlayer* Loc
 		HostSettings.Set(TEXT("OSSv1"), true, EOnlineDataAdvertisementType::ViaOnlineService);
 		HostSettings.Set(TEXT("SESSION_NAME"), Request->SessionName, EOnlineDataAdvertisementType::ViaOnlineService);
 		HostSettings.Set(TEXT("MAPDATA"), Request->MapData.ToString(), EOnlineDataAdvertisementType::ViaOnlineService);
-		if (Request->bIsPrivate)
-		{
-			HostSettings.Set(TEXT("PASSWORD"), Request->Password, EOnlineDataAdvertisementType::ViaOnlineService);
-		}
 
 		Sessions->CreateSession(*UserId, SessionName, HostSettings);
 		NotifySessionInformationUpdated(ECommonSessionInformationState::InGame, Request->ModeNameForAdvertisement, Request->GetMapName());

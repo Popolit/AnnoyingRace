@@ -11,4 +11,6 @@ void UWaitingPlayersWidget::NativeConstruct()
 	check( GI );
 
 	Txt_TotalCount_->SetText(FText::AsNumber(GI->GetRacePlayerCount()));
+
+	//TODO : 유저 수 업데이트 델리게이트 추가
 }

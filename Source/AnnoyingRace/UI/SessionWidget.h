@@ -33,24 +33,15 @@ private:
 
 private:
 	void UpdateUIForHost();
-
-	UFUNCTION()
-		void OnMapChanged(FString _SelectedMap, ESelectInfo::Type _SelectionType);
 	
 	UFUNCTION()
 		void OnClickedReadyBtn();
 
 	UFUNCTION()
+		void OnClickedPublicBtn();
+
+	UFUNCTION()
 		void OnClickedBackBtn();
-
-	UFUNCTION()
-		void OnSessionNameChanged(const FText& _Text, ETextCommit::Type _CommitMethod);
-
-	UFUNCTION()
-		void OnPasswordChanged(const FText& _Text, ETextCommit::Type _CommitMethod);
-
-	UFUNCTION()
-		void OnPrivateStateChanged(bool _bChecked);
 
 	UFUNCTION()
 		void OnPlayerChatted(const FText& _Text, ETextCommit::Type _CommitMethod);
@@ -62,25 +53,25 @@ private:
 	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<class UVerticalBox> VB_UserList_;
 	UPROPERTY(meta = (BindWidget))
-		TObjectPtr<class UComboBoxString> CBB_MapList_;
+		TObjectPtr<class UTextBlock> Txt_Map_;
 	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<class UImage> Img_Map_;
 	UPROPERTY(meta = (BindWidget))
+		TObjectPtr<UImage> Img_Private_;
+	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<class UButton> Btn_Ready_;
+	UPROPERTY(meta = (BindWidget))
+		TObjectPtr<UButton> Btn_Public_;
 	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<UButton> Btn_Back_;
 	UPROPERTY(meta = (BindWidget))
-		TObjectPtr<class UEditableText> EDT_SessionName_;
-	UPROPERTY(meta = (BindWidget))
-		TObjectPtr<class UEditableTextBox> ETB_Password_;
-	UPROPERTY(meta = (BindWidget))
-		TObjectPtr<class UCheckBox> CHB_IsPrivate_;
+		TObjectPtr<UTextBlock> Txt_SessionName_;
 	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<class UScrollBox> SCB_ChatLog_;
 	UPROPERTY(meta = (BindWidget))
-		TObjectPtr<UEditableTextBox> ETB_Chat_;
+		TObjectPtr<class UEditableTextBox> ETB_Chat_;
 	UPROPERTY(meta = (BindWidget))
-		TObjectPtr<class UTextBlock> Txt_CountDown_;
+		TObjectPtr<UTextBlock> Txt_CountDown_;
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 		TObjectPtr<UWidgetAnimation> Anim_CountDown_;
@@ -90,8 +81,6 @@ private:
 
 private:
 	bool bMapsLoaded_;
-	
-	FPrimaryAssetId CachedMap_;
 	
 	uint8 Count_;
 };

@@ -18,12 +18,16 @@ public:
 
 	virtual void SetupPlayerInputComponent(UInputComponent* _PlayerInputComponent) override;
 
+	virtual void LaunchCharacter(FVector _LaunchVelocity, bool _bXYOverride, bool _bZOverride) override;
+	
 	virtual float TakeDamage(float _DamageAmount, FDamageEvent const& _DamageEvent, AController* _EventInstigator, AActor* _DamageCauser) override;
 
 	void ProcessHit(uint8 _DamageAmount, FDamageEvent const& _DamageEvent);
 
 	void SkillButtonPushed();
 
+	virtual void FellOutOfWorld(const class UDamageType& _DmgType) override;
+	
 	void ProcessDeath();
 
 	UFUNCTION(Server, Reliable)
@@ -35,6 +39,9 @@ private:
 
 	UFUNCTION(NetMulticast, Reliable)
 		void Multicast_PlayAnimMontage(UAnimMontage* _Montage);
+
+	UFUNCTION(Server, Reliable)
+		void Server_LaunchCharacter(const FVector& _LaunchVelocity, bool _bXYOverride, bool _bZOverride);
 
 	void CreateAllComponents();
 

@@ -34,6 +34,8 @@ public:
 
 	void FindSessions(APlayerController* _PC);
 
+	void JoinSessionWithResult(APlayerController* _PC, UCommonSession_SearchResult* _SearchResult);
+
 	void CleanUpSession(APlayerController* _PC);
 
 	void SetRacePlayerCount(int32 _RacePlayerCount);
