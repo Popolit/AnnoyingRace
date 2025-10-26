@@ -16,7 +16,6 @@ void UCreateSessionWidget::NativeConstruct()
 	Super::NativeConstruct();
 
 	LastValidUserCount_ = ETB_MaxUserCount_->GetText();
-	CHB_IsPrivate_->OnCheckStateChanged.AddDynamic(this, &UCreateSessionWidget::OnCheckPrivateStateChanged);
 	ETB_MaxUserCount_->OnTextChanged.AddDynamic(this, &UCreateSessionWidget::OnMaxUserCountChanged);
 	ETB_MaxUserCount_->OnTextCommitted.AddDynamic(this, &UCreateSessionWidget::OnMaxUserCountCommitted);
 	
@@ -33,11 +32,6 @@ void UCreateSessionWidget::NativeConstruct()
 	AssetManager.GetPrimaryAssetIdList("MapData", MapAssetIds);
 	AssetManager.LoadPrimaryAssets(MapAssetIds, TArray<FName>(),
 		FStreamableDelegate::CreateUObject(this, &UCreateSessionWidget::OnMapsLoaded));
-}
-
-void UCreateSessionWidget::OnCheckPrivateStateChanged(bool _bChecked)
-{
-	ETB_Password_->SetIsReadOnly(!_bChecked);
 }
 
 void UCreateSessionWidget::OnMaxUserCountChanged(const FText& _Text)
@@ -118,11 +112,6 @@ void UCreateSessionWidget::OnClickedCreateBtn()
 			FSessionData SessionData;
 			
 			SessionData.SessionName_ = ETB_SessionName_->GetText().ToString();
-			SessionData.bPrivate_ = CHB_IsPrivate_->IsChecked();
-			if (CHB_IsPrivate_->IsChecked())
-			{
-				SessionData.Password_ = ETB_Password_->GetText().ToString();
-			}
 			SessionData.MaxUserCount_ = FCString::Atoi(*ETB_MaxUserCount_->GetText().ToString());
 			
 			auto& AssetManager = UAssetManager::Get();
@@ -188,11 +177,6 @@ bool UCreateSessionWidget::CheckAllPropertyIsValid(FText& _ErrorMessage)
 	if (ETB_SessionName_->GetText().IsEmpty())
 	{
 		_ErrorMessage = LOCTEXT("Error_EmptySessionName", "Session Name cannot be empty.");
-		return false;
-	}
-	if (CHB_IsPrivate_->IsChecked() && ETB_Password_->GetText().IsEmpty())
-	{
-		_ErrorMessage = LOCTEXT("Error_EmptyPassword", "Private session's Password cannot be empty.");
 		return false;
 	}
 	const FText& Text = ETB_MaxUserCount_->GetText();

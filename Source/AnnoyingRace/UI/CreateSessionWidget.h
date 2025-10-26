@@ -16,9 +16,6 @@ protected:
 
 private:
 	UFUNCTION()
-		void OnCheckPrivateStateChanged(bool _bChecked);
-	
-	UFUNCTION()
 		void OnMaxUserCountChanged(const FText& _Text);
 
 	UFUNCTION()
@@ -34,10 +31,6 @@ private:
 private:
 	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<class UEditableTextBox> ETB_SessionName_;
-	UPROPERTY(meta = (BindWidget))
-		TObjectPtr<UEditableTextBox> ETB_Password_;
-	UPROPERTY(meta = (BindWidget))
-		TObjectPtr<class UCheckBox> CHB_IsPrivate_;
 	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<UEditableTextBox> ETB_MaxUserCount_;
 	UPROPERTY(meta = (BindWidget))
