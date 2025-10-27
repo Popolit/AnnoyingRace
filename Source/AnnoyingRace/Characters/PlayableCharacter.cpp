@@ -119,14 +119,15 @@ void APlayableCharacter::ProcessDeath()
 	if (HasAuthority())
 	{
 		ARacePlayerController* PC = Cast <ARacePlayerController>(GetController());
-		check(PC);
-
-		if (ARaceGameMode* GM = GetWorld()->GetAuthGameMode<ARaceGameMode>())
+		if (PC)
 		{
-			PC->SetSpectatorMode(CameraComponent_->GetComponentTransform());
-			GM->HandlePlayerDeath(PC);
+			if (ARaceGameMode* GM = GetWorld()->GetAuthGameMode<ARaceGameMode>())
+			{
+				PC->SetSpectatorMode(CameraComponent_->GetComponentTransform());
+				GM->HandlePlayerDeath(PC);
+			}
+			Multicast_ProcessDeath();
 		}
-		Multicast_ProcessDeath();
 	}
 }
 

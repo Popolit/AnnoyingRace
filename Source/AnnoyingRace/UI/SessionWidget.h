@@ -80,7 +80,7 @@ private:
 		TSubclassOf<class USession_UserSlot> SessionUserSlotClass_;
 
 private:
-	bool bMapsLoaded_;
+	bool bCountDownStopped_ = false;
 	
 	uint8 Count_;
 };

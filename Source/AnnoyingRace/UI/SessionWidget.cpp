@@ -50,7 +50,7 @@ void USessionWidget::NativeConstruct()
 void USessionWidget::OnAnimationFinished_Implementation(const UWidgetAnimation* _Animation)
 {
 	//애니메이션 종료가 아닌 중단의 경우
-	if (_Animation != Anim_CountDown_ && IsAnimationPlaying(_Animation))
+	if (_Animation != Anim_CountDown_ || bCountDownStopped_)
 	{
 		return;
 	}
@@ -118,6 +118,8 @@ void USessionWidget::AddChatOnLog(const FText& _Chat, const FString& _PlayerName
 void USessionWidget::BeginCountDown()
 {
 	PlayAnimation(Anim_CountDown_, 0);
+	bCountDownStopped_ = false;
+	
 	Txt_CountDown_->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 
 	auto PC = GetOwningPlayer<ASessionPlayerController>();
@@ -132,6 +134,7 @@ void USessionWidget::BeginCountDown()
 void USessionWidget::StopCountDown()
 {
 	StopAnimation(Anim_CountDown_);
+	bCountDownStopped_ = true;
 
 	Txt_CountDown_->SetText(FText::AsNumber(Count_));
 	Txt_CountDown_->SetVisibility(ESlateVisibility::Collapsed);

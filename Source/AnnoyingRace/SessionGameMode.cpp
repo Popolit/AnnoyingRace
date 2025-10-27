@@ -118,7 +118,7 @@ void ASessionGameMode::InitializeSession()
         {
             FSessionInfo CurrentSessionInfo;
             Session->SessionSettings.Get(FName("SESSION_NAME"), CurrentSessionInfo.SessionName_);
-            CurrentSessionInfo.MaxUserCount_ = Session->SessionSettings.NumPrivateConnections;
+            CurrentSessionInfo.MaxUserCount_ = Session->SessionSettings.NumPrivateConnections + 1;
             CurrentSessionInfo.CurrentUserCount_ = 1;
         	CurrentSessionInfo.bIsPrivate_ = true;
 
@@ -151,11 +151,11 @@ void ASessionGameMode::OnSessionUpdated(FName _SessionName, bool _bWasSuccessful
 			FSessionInfo SessionInfo;
 			Session->SessionSettings.Get(FName("SESSION_NAME"), SessionInfo.SessionName_);
 			SessionInfo.bIsPrivate_ = (0 < Session->SessionSettings.NumPrivateConnections)
-												&& (0 == Session->SessionSettings.NumPublicConnections);
+												&& (1 == Session->SessionSettings.NumPublicConnections);
 			
 			if (SessionInfo.bIsPrivate_)
 			{
-				SessionInfo.MaxUserCount_ = Session->SessionSettings.NumPrivateConnections;
+				SessionInfo.MaxUserCount_ = Session->SessionSettings.NumPrivateConnections + 1;
 			}
 			else
 			{
