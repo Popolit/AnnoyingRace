@@ -199,6 +199,7 @@ void ALobbyPlayerController::OpenOption()
 	}
 }
 
+
 void ALobbyPlayerController::OpenExitDialogue()
 {
 	if (nullptr == ExitDialogueWidget_)
@@ -258,9 +259,6 @@ void ALobbyPlayerController::OpenMessageDialogue(const FText& _Message)
 	}
 }
 
-void ALobbyPlayerController::OpenPasswordDialogue()
-{
-}
 
 void ALobbyPlayerController::CloseOption()
 {

@@ -15,6 +15,5 @@ void ULobbyWidget::NativeConstruct()
 	Btn_CreateRoom_->OnClicked.AddDynamic(PC, &ALobbyPlayerController::OpenCreateSession);
 	Btn_JoinGame_->OnClicked.AddDynamic(PC, &ALobbyPlayerController::OpenJoinSession);
 	Btn_Option_->OnClicked.AddDynamic(PC, &ALobbyPlayerController::OpenOption);
-	//Btn_Credits_->OnClicked.AddDynamic(PC, &ALobbyPlayerController::OpenOption);
 	Btn_Exit_->OnClicked.AddDynamic(PC, &ALobbyPlayerController::OpenExitDialogue);
 }

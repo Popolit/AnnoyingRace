@@ -23,7 +23,5 @@ private:
 	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<UButton> Btn_Option_;
 	UPROPERTY(meta = (BindWidget))
-		TObjectPtr<UButton> Btn_Credits_;
-	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<UButton> Btn_Exit_;
 };

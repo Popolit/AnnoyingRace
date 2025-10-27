@@ -146,7 +146,7 @@ void ASessionGameMode::OnSessionUpdated(FName _SessionName, bool _bWasSuccessful
 	if (GS && SessionInterface)
 	{
 		FNamedOnlineSession* Session = SessionInterface->GetNamedSession(_SessionName);
-		if (Session)
+		if (Session && Session->SessionState == EOnlineSessionState::InProgress)
 		{
 			FSessionInfo SessionInfo;
 			Session->SessionSettings.Get(FName("SESSION_NAME"), SessionInfo.SessionName_);

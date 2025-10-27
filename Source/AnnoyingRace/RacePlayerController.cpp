@@ -6,6 +6,7 @@
 #include "RaceGameState.h"
 #include "LevelSequenceActor.h"
 #include "LevelSequencePlayer.h"
+#include "RaceGameInstance.h"
 #include "RacePlayerState.h"
 #include "Components/AudioComponent.h"
 #include "GameFramework/GameUserSettings.h"
@@ -222,8 +223,11 @@ void ARacePlayerController::OpenMainMenu()
 
 void ARacePlayerController::ExitGame()
 {
-	//TODO : Lobby로 돌아가기
-	ConsoleCommand("quit");
+	auto GI = GetGameInstance<URaceGameInstance>();
+	if (GI)
+	{
+		GI->CleanUpSession(this);
+	}
 }
 
 void ARacePlayerController::CloseMainMenu()

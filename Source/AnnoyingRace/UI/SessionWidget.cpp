@@ -186,7 +186,6 @@ void USessionWidget::UpdateSessionInfo(const FSessionInfo& _SessionInfo)
 void USessionWidget::UpdatePlayerList(const TArray<FSessionPlayerInfo>& _PlayerList)
 {
 	UpdateUIForHost();
-
 	if (nullptr == SessionUserSlotClass_)
 	{
 		ensureMsgf(false, TEXT("Session User Slot Class was not set"));
