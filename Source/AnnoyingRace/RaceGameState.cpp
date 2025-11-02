@@ -36,7 +36,7 @@ void ARaceGameState::HandleStartRace()
 	}
 }
 
-void ARaceGameState::SetMaxCheckPointCount(uint8 _Count)
+void ARaceGameState::SetMaxCheckPointCount(const uint8 _Count)
 {
 	MaxCheckPointCount_ = _Count;
 }
@@ -46,7 +46,7 @@ uint8 ARaceGameState::GetMaxCheckPointCount() const
 	return MaxCheckPointCount_;
 }
 
-void ARaceGameState::SetMaxLap(uint8 _MaxLaps)
+void ARaceGameState::SetMaxLap(const uint8 _MaxLaps)
 {
 	MaxLap_ = _MaxLaps;
 }
@@ -88,6 +88,12 @@ void ARaceGameState::UpdatePlayerRankings()
 			if (!RhsState)
 			{
 				return true;
+			}
+
+			//완주했을 경우, 완주한 사람 우선
+			if (LhsState->IsFinished() != RhsState->IsFinished())
+			{
+				return LhsState->IsFinished() > RhsState->IsFinished();
 			}
 
 			//Laps가 같으면 진행거리로 판단

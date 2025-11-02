@@ -11,7 +11,7 @@ UCLASS()
 class ANNOYINGRACE_API ARaceGameMode : public AGameMode
 {
 	GENERATED_BODY()
-
+	friend class URaceCheatManager;
 public:
 	ARaceGameMode();
 
@@ -38,12 +38,18 @@ public:
 
 private:
 	UFUNCTION(BlueprintCallable)
-	void StartRaceCountDown();
+		void StartRaceCountDown();
 
 	TObjectPtr<class UCharacterData> PopNextCharacter();
 
 	void ShuffleCharacterQueue();
 
+	bool CheckAllPlayersFinishedRace();
+
+	void FinishRace();
+
+	void ReturnToSession();
+	
 private:
 	UPROPERTY(EditDefaultsOnly)
 	TArray<TObjectPtr<class UCharacterData>> CharacterPool_;
@@ -55,4 +61,6 @@ private:
 	bool bRaceStarted_;
 
 	int32 ReadiedPlayerCount_ = 1;
+
+	FTimerHandle RaceFinishCountDownTimer_;
 };

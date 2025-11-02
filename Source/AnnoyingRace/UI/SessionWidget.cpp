@@ -1,6 +1,7 @@
 #include "SessionWidget.h"
 
 #include "RaceGameInstance.h"
+#include "RaceGameResultWidget.h"
 #include "SessionGameState.h"
 #include "SessionPlayerController.h"
 #include "Session_UserSlot.h"
@@ -14,6 +15,7 @@
 #include "Engine/AssetManager.h"
 #include "World/MapData.h"
 
+#define LOCTEXT_NAMESPACE "ErrorMessages"
 
 void USessionWidget::NativeConstruct()
 {
@@ -21,6 +23,8 @@ void USessionWidget::NativeConstruct()
 
 	//Delegations
 	VB_UserList_->ClearChildren();
+	ETB_Laps_->OnTextChanged.AddDynamic(this, &USessionWidget::OnLapsChanged);
+	ETB_Laps_->OnTextCommitted.AddDynamic(this, &USessionWidget::OnLapsCommitted);
 	Btn_Ready_->OnClicked.AddDynamic(this, &USessionWidget::OnClickedReadyBtn);
 	Btn_Back_->OnClicked.AddDynamic(this, &USessionWidget::OnClickedBackBtn);
 	Btn_Public_->OnClicked.AddDynamic(this, &USessionWidget::OnClickedPublicBtn);
@@ -68,6 +72,12 @@ void USessionWidget::OnAnimationFinished_Implementation(const UWidgetAnimation* 
 	}
 	
 	FSessionInfo SessionInfo = GS->GetSessionInfo();
+	if (SessionInfo.Laps_ <= 0 || 10 < SessionInfo.Laps_)
+	{
+		PC->OpenMessageDialogue(LOCTEXT("ERROR_InvalidLaps", "Failed to start game.\n Please check the Laps value."));
+		StopCountDown();
+		return;
+	}
 	
 	auto& AssetManager = UAssetManager::Get();
 	TArray<FPrimaryAssetId> MapAssetIds;
@@ -83,7 +93,7 @@ void USessionWidget::OnAnimationFinished_Implementation(const UWidgetAnimation* 
 		{
 			uint8 Index = FMath::RandRange(0, MapAssetIds.Num() - 2);
 			
-			uint8 IndexOfRandom;
+			uint8 IndexOfRandom = 0;
 			for (uint8 i = 0; i < MapAssetIds.Num(); i++)
 			{
 				if (MapAssetIds[i] == SelectedMapAssetId)
@@ -101,7 +111,7 @@ void USessionWidget::OnAnimationFinished_Implementation(const UWidgetAnimation* 
 			SelectedMapAssetId = MapAssetIds[Index];
 			MapData = Cast<UMapData>(AssetManager.GetPrimaryAssetObject(SelectedMapAssetId));
 		}
-		PC->RequestServerTravel(MapData->MapAssetId_);
+		PC->RequestServerTravel(MapData->MapAssetId_, SessionInfo.Laps_);
 	}
 }
 
@@ -127,6 +137,7 @@ void USessionWidget::BeginCountDown()
 	{
 		PC->RequestSetSessionJoinable(false);
 		Btn_Public_->SetIsEnabled(false);
+		ETB_Laps_->SetIsEnabled(false);
 	}
 }
 
@@ -144,6 +155,7 @@ void USessionWidget::StopCountDown()
 	{
 		PC->RequestSetSessionJoinable(true);
 		Btn_Public_->SetIsEnabled(true);
+		ETB_Laps_->SetIsEnabled(true);
 	}
 }
 
@@ -173,16 +185,17 @@ void USessionWidget::OnMapsLoaded()
 void USessionWidget::UpdateSessionInfo(const FSessionInfo& _SessionInfo)
 {
 	Txt_SessionName_->SetText(FText::FromString(_SessionInfo.SessionName_));
+	ETB_Laps_->SetText(FText::AsNumber(_SessionInfo.Laps_));
 	
 	if (_SessionInfo.bIsPrivate_)
 	{
 		Img_Private_->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-		Btn_Public_->SetIsEnabled(true);
+		Btn_Public_->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	}
 	else
 	{
 		Img_Private_->SetVisibility(ESlateVisibility::Collapsed);
-		Btn_Public_->SetIsEnabled(false);
+		Btn_Public_->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }
 
@@ -233,6 +246,87 @@ void USessionWidget::UpdateUIForHost()
 	{
 		bool bIsHost = PC->HasAuthority();
 		Btn_Public_->SetVisibility(bIsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+		ETB_Laps_->SetIsEnabled(bIsHost);
+	}
+}
+
+//Laps 텍스트 변경 시 검사
+void USessionWidget::OnLapsChanged(const FText& _Text)
+{
+	APlayerController* PC = GetOwningPlayer();
+	if (nullptr == PC || false == PC->HasAuthority())
+	{
+		return;
+	}
+	if (_Text.IsEmpty())
+	{
+		return;
+	}
+	
+	if (false == _Text.IsNumeric())
+	{
+		ETB_Laps_->SetText(LastValidLaps_);
+		return;
+	}
+
+	int32 Num = FCString::Atoi(*_Text.ToString());
+	if (Num <= 0)
+	{
+		LastValidLaps_ = FText::AsNumber(1);
+		ETB_Laps_->SetText(LastValidLaps_);
+	}
+	//최대값 10
+	else if (10 < Num)
+	{
+		LastValidLaps_ = FText::AsNumber(10);
+		ETB_Laps_->SetText(LastValidLaps_);
+	}
+	//이상 없음
+	else
+	{
+		LastValidLaps_ = _Text;
+	}
+}
+
+void USessionWidget::OnLapsCommitted(const FText& _Text, ETextCommit::Type _CommitType)
+{
+	APlayerController* PC = GetOwningPlayer();
+	if (nullptr == PC || false == PC->HasAuthority())
+	{
+		return;
+	}
+	if (_Text.IsEmpty())
+	{
+		ETB_Laps_->SetText(LastValidLaps_);
+	}
+	else if (false == _Text.IsNumeric())
+	{
+		ETB_Laps_->SetText(LastValidLaps_);
+	}
+	else
+	{
+		int32 Num = FCString::Atoi(*_Text.ToString());
+		if (Num <= 0)
+		{
+			LastValidLaps_ = FText::AsNumber(1);
+			ETB_Laps_->SetText(LastValidLaps_);
+		}
+		else if (10 < Num)
+		{
+			LastValidLaps_ = FText::AsNumber(10);
+			ETB_Laps_->SetText(LastValidLaps_);
+		}
+		//이상 없음
+		else
+		{
+			LastValidLaps_ = _Text;
+		}
+	}
+
+	auto GS = GetWorld()->GetGameState<ASessionGameState>();
+	if (GS && ETB_Laps_->GetText().IsNumeric())
+	{
+		GS->SetLaps(FCString::Atoi(*ETB_Laps_->GetText().ToString()));
 	}
 }
 
@@ -288,3 +382,5 @@ void USessionWidget::UpdateCountDown()
 	int32 Count = FCString::Atoi(*Txt_CountDown_->GetText().ToString());
 	Txt_CountDown_->SetText(FText::AsNumber(--Count));
 }
+
+#undef LOCTEXT_NAMESPACE

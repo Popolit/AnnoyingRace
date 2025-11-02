@@ -36,6 +36,10 @@ public:
 
 	void SetTotalDistance(float _Distance);
 
+	void SetRaceFinished();
+
+	bool IsFinished() const;
+	
 private:
 	UFUNCTION()
 		void OnRep_CharacterData();
@@ -58,4 +62,7 @@ public:
 	FOnCharacterDataSet OnCharacterDataSet_;
 
 	FOnLapsChanged OnLapsChanged_;
+
+private:
+	bool bFinished_;
 };

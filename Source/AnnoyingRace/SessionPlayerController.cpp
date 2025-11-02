@@ -10,6 +10,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "UI/MessageDialogueWidget.h"
+#include "UI/RaceGameResultWidget.h"
 #include "UI/SessionWidget.h"
 #include "World/RaceWorldSettings.h"
 
@@ -54,6 +55,21 @@ void ASessionPlayerController::BeginPlay()
 		InputMode.SetWidgetToFocus(SessionWidget_->TakeWidget());
 		SetInputMode(InputMode);
 		bShowMouseCursor = true;
+
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			auto GS = World->GetGameState<ASessionGameState>();
+			if (GS)
+			{
+				GS->OnPrevGameResultUpdated_.BindUObject(this, &ASessionPlayerController::OpenPrevRaceGameResult);
+				const TArray<FRaceGameResultData> PrevGameResult = GS->GetPrevGameResult();
+				if (false == PrevGameResult.IsEmpty())
+				{
+					OpenPrevRaceGameResult(PrevGameResult);
+				}
+			}
+		}
 	}
 }
 
@@ -142,7 +158,7 @@ void ASessionPlayerController::RequestSetSessionJoinable(bool _bCanJoin)
 }
 
 //해당하는 맵으로 게임 시작
-void ASessionPlayerController::RequestServerTravel(const FPrimaryAssetId& _MapId)
+void ASessionPlayerController::RequestServerTravel(const FPrimaryAssetId& _MapId, const int32 _Laps)
 {
 	if (HasAuthority() && ensureMsgf(_MapId.IsValid(), TEXT("Map was nullptr")))
 	{
@@ -171,6 +187,7 @@ void ASessionPlayerController::RequestServerTravel(const FPrimaryAssetId& _MapId
 				return;
 			}
 			GI->SetRacePlayerCount(GS->PlayerArray.Num());
+			GI->SetRaceLaps(_Laps);
 
 			UE_LOG(LogTemp, Log, TEXT("Server Travel Processed!"));
 			GM->ProcessServerTravel(URL, true);
@@ -220,6 +237,26 @@ void ASessionPlayerController::CloseMessageDialogue()
 		FInputModeGameAndUI InputMode;
 		InputMode.SetWidgetToFocus(SessionWidget_->TakeWidget());
 		SetInputMode(InputMode);
+	}
+}
+
+void ASessionPlayerController::OpenPrevRaceGameResult(const TArray<FRaceGameResultData>& _PrevRaceGameResult)
+{
+	if (RaceGameResultWidget_)
+	{
+		RaceGameResultWidget_->SetGameResult(_PrevRaceGameResult);
+		RaceGameResultWidget_->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+		return;
+	}
+	if (ensureMsgf(RaceGameResultWidgetClass_, TEXT("Race Game Result Widget Class was not set")))
+	{
+		RaceGameResultWidget_ = CreateWidget<URaceGameResultWidget>(this, RaceGameResultWidgetClass_);
+
+		if (RaceGameResultWidget_)
+		{
+			RaceGameResultWidget_->SetGameResult(_PrevRaceGameResult);
+			RaceGameResultWidget_->AddToViewport(1);
+		}
 	}
 }
 

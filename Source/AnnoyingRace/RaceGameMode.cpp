@@ -4,10 +4,12 @@
 #include "RaceGameState.h"
 #include "RacePlayerState.h"
 #include "RacePlayerController.h"
+#include "Camera/CameraComponent.h"
 #include "Characters/PlayableCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "World/TrackSplineActor.h"
 #include "Characters/CharacterData.h"
+#include "Engine/AssetManager.h"
 
 ARaceGameMode::ARaceGameMode()
 {
@@ -30,6 +32,11 @@ void ARaceGameMode::StartPlay()
 	check(GS);
 
 	GS->SetMaxCheckPointCount(TrackSpline_->GetNumberOfCheckPoints());
+
+	auto GI = GetGameInstance<URaceGameInstance>();
+	check(GI);
+
+	GS->SetMaxLap(GI->GetRaceLaps());
 }
 
 void ARaceGameMode::StartMatch()
@@ -175,25 +182,47 @@ void ARaceGameMode::HandleCheckPointPassed(uint8 _CheckPointIndex, APlayerContro
 	{
 		return;
 	}
-
-
+	
 	//한바퀴를 돌아 Laps 증가
 	if(_CheckPointIndex == 0)
 	{
+		//완주
 		if (GetGameState<ARaceGameState>()->GetMaxLap() <= PS->GetLaps())
 		{
-			//완주 처리 코드
+			PS->SetRaceFinished();
+			auto PC = Cast<ARacePlayerController>(_PC);
+			APawn* PassedPawn = _PC->GetPawn();
+			FTransform Transform = FTransform::Identity;
+			if (PassedPawn)
+			{
+				auto Camera = PassedPawn->GetComponentByClass<UCameraComponent>();
+				if (Camera)
+				{
+					Transform = Camera->GetComponentTransform();
+				}
+				PassedPawn->Destroy();
+			}
+			
+			if (PC)
+			{
+				PC->SetSpectatorMode(Transform);
+				PC->Client_OpenPlayerFinishUI();
+			}
+
+			if (CheckAllPlayersFinishedRace())
+			{
+				FinishRace();
+			}
 			return;
 		}
 		PS->IncreaseLap();
 	}
-
+	
 	APawn* PassedPawn = _PC->GetPawn();
 	if (PassedPawn)
 	{
 		PassedPawn->Destroy();
 	}
-
 	PS->SetCheckPointIndex(TargetCheckPointIndex);
 	DrawNewCharacter(_PC);
 }
@@ -236,5 +265,68 @@ void ARaceGameMode::ShuffleCharacterQueue()
 		}
 		IsSelected[Index] = true;
 		CharacterQueue_.Enqueue(CharacterPool_[Index]);
+	}
+}
+
+bool ARaceGameMode::CheckAllPlayersFinishedRace()
+{
+	auto GS = GetGameState<ARaceGameState>();
+
+	if (GS)
+	{
+		for (const auto& Elem : GS->PlayerArray)
+		{
+			auto PS = Cast<ARacePlayerState>(Elem);
+
+			check(PS);
+			if (false == PS->IsFinished())
+			{
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+void ARaceGameMode::FinishRace()
+{
+	auto GS = GetGameState<ARaceGameState>();
+
+	if (GS)
+	{
+		const TArray<TObjectPtr<APlayerState>> Rankings = GS->GetPlayerRankings();
+		int32 PlayerRank = 1;
+		for (const auto PS : Rankings)
+		{
+			auto PC = Cast<ARacePlayerController>(PS->GetOwningController());
+
+			if (PC)
+			{
+				PC->Client_OpenRaceFinishedUI(PlayerRank);
+			}
+			PlayerRank++;
+		}
+
+		GetWorldTimerManager().SetTimer(RaceFinishCountDownTimer_, this,
+			&ARaceGameMode::ReturnToSession, 5.0f, false);
+	}
+}
+
+void ARaceGameMode::ReturnToSession()
+{
+	auto GI = GetGameInstance<URaceGameInstance>();
+	auto GS = GetGameState<ARaceGameState>();
+	if (GI && GS)
+	{
+		GI->SetPrevGameResult(GS->GetPlayerRankings());
+		FPrimaryAssetId SessionMap = GI->GetSessionMap();
+		if (SessionMap.IsValid())
+		{
+			FAssetData MapAssetData;
+			if (UAssetManager::Get().GetPrimaryAssetData(SessionMap, MapAssetData))
+			{
+				ProcessServerTravel(MapAssetData.PackageName.ToString() + "?listen", true);
+			}
+		}
 	}
 }

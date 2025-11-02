@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "World/RaceGameResultData.h"
 #include "RaceGameInstance.generated.h"
 
 DECLARE_DELEGATE_ThreeParams(FOnSessionFindComplete, bool, const FText&, const TArray<class UCommonSession_SearchResult*>&)
@@ -38,10 +39,24 @@ public:
 
 	void CleanUpSession(APlayerController* _PC);
 
-	void SetRacePlayerCount(int32 _RacePlayerCount);
+	FPrimaryAssetId GetSessionMap() const;
+
+	void SetRacePlayerCount(const int32 _RacePlayerCount);
 
 	int32 GetRacePlayerCount() const;
 
+	void SetRaceLaps(const int32 _RaceLaps);
+
+	uint8 GetRaceLaps() const;
+
+	void SetPrevGameResult(const TArray<TObjectPtr<APlayerState>>& _PlayerRankings);
+
+	bool CheckPrevGameWasExist() const;
+
+	TArray<FRaceGameResultData> GetPrevGameResult() const;
+
+	void ClearPrevGameResult();
+	
 private:
 	void OnCreateSessionComplete(const struct FOnlineResultInformation& _Result);
 
@@ -66,6 +81,11 @@ private:
 
 	UPROPERTY()
 		int32 RacePlayerCount_;
+
+	UPROPERTY()
+		uint8 RaceLaps_;
+
+	TArray<FRaceGameResultData> PrevRaceGameResult_;
 
 public:
 	FOnSessionFindComplete OnSessionFindComplete_;

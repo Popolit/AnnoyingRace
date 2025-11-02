@@ -16,6 +16,7 @@ void ARacePlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ARacePlayerState, Laps_);
 	DOREPLIFETIME(ARacePlayerState, CharacterData_);
+	DOREPLIFETIME(ARacePlayerState, bFinished_);
 }
 
 TObjectPtr<UCharacterData> ARacePlayerState::GetCharacterData() const
@@ -66,6 +67,16 @@ float ARacePlayerState::GetTotalDistance() const
 void ARacePlayerState::SetTotalDistance(float _Distance)
 {
 	Distance_ = _Distance;
+}
+
+void ARacePlayerState::SetRaceFinished()
+{
+	bFinished_ = true;
+}
+
+bool ARacePlayerState::IsFinished() const
+{
+	return bFinished_;
 }
 
 void ARacePlayerState::OnRep_CharacterData()

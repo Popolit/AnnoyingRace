@@ -18,15 +18,21 @@
 #include "UI/CountDownWidget.h"
 #include "UI/ExitDialogueWidget.h"
 #include "UI/OptionWidget.h"
+#include "UI/RaceFinishedWidget.h"
 #include "UserSettings/EnhancedInputUserSettings.h"
 #include "World/RaceWorldSettings.h"
 #include "World/TrackSplineActor.h"
+#include "RaceCheatManager.h"
 
 
 ARacePlayerController::ARacePlayerController()
 {
 	AudioComponent_ = CreateDefaultSubobject<UAudioComponent>("Audio");
 	AudioComponent_->SetupAttachment(GetRootComponent());
+
+#if UE_WITH_CHEAT_MANAGER
+	CheatClass = URaceCheatManager::StaticClass();
+#endif
 }
 
 void ARacePlayerController::BeginPlay()
@@ -320,6 +326,30 @@ void ARacePlayerController::Client_CloseWaitingPlayersUI_Implementation()
 	}
 }
 
+void ARacePlayerController::Client_OpenPlayerFinishUI_Implementation()
+{
+	if (ensureMsgf(PlayerFinishWidgetClass_, TEXT("PlayerFinish Widget Class was not set")))
+	{
+		PlayerFinishWidget_ = CreateWidget( this , PlayerFinishWidgetClass_ );
+		PlayerFinishWidget_->AddToViewport(2);
+	}
+}
+
+void ARacePlayerController::Client_OpenRaceFinishedUI_Implementation(int32 _PlayerRank)
+{
+	if (ensureMsgf(RaceFinishedWidgetClass_, TEXT("RaceFinish Widget Class was not set")))
+	{
+		if (PlayerFinishWidget_)
+		{
+			PlayerFinishWidget_->RemoveFromParent();
+		}
+		RaceFinishedWidget_ = CreateWidget<URaceFinishedWidget>( this , RaceFinishedWidgetClass_);
+		if (RaceFinishedWidget_)
+		{
+			RaceFinishedWidget_->AddToViewport(3);
+		}
+	}
+}
 
 void ARacePlayerController::Server_RequestDrawCharacter_Implementation()
 {

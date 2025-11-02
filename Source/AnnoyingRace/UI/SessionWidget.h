@@ -33,6 +33,12 @@ private:
 
 private:
 	void UpdateUIForHost();
+
+	UFUNCTION()
+		void OnLapsChanged(const FText& _Text);
+
+	UFUNCTION()
+		void OnLapsCommitted(const FText& _Text, ETextCommit::Type _CommitType);
 	
 	UFUNCTION()
 		void OnClickedReadyBtn();
@@ -48,12 +54,14 @@ private:
 
 	UFUNCTION(BlueprintCallable)
 		void UpdateCountDown();
-	
+
 private:
 	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<class UVerticalBox> VB_UserList_;
 	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<class UTextBlock> Txt_Map_;
+	UPROPERTY(meta = (BindWidget))
+		TObjectPtr<class UEditableTextBox> ETB_Laps_;
 	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<class UImage> Img_Map_;
 	UPROPERTY(meta = (BindWidget))
@@ -69,7 +77,7 @@ private:
 	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<class UScrollBox> SCB_ChatLog_;
 	UPROPERTY(meta = (BindWidget))
-		TObjectPtr<class UEditableTextBox> ETB_Chat_;
+		TObjectPtr<UEditableTextBox> ETB_Chat_;
 	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<UTextBlock> Txt_CountDown_;
 
@@ -80,6 +88,8 @@ private:
 		TSubclassOf<class USession_UserSlot> SessionUserSlotClass_;
 
 private:
+	FText LastValidLaps_;
+	
 	bool bCountDownStopped_ = false;
 	
 	uint8 Count_;

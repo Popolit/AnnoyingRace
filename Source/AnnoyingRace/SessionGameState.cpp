@@ -19,6 +19,7 @@ void ASessionGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(ASessionGameState, SessionInfo_);
 	DOREPLIFETIME(ASessionGameState, PlayerList_);
 	DOREPLIFETIME(ASessionGameState, HostId_);
+	DOREPLIFETIME(ASessionGameState, PrevGameResult_);
 }
 
 void ASessionGameState::UpdateSession(const FSessionInfo& _SessionInfo)
@@ -114,9 +115,36 @@ void ASessionGameState::SetHost(const FUniqueNetIdRepl& _HostId)
 	}
 }
 
+void ASessionGameState::SetLaps(const int32 _Laps)
+{
+	if (false == HasAuthority())
+	{
+		return;
+	}
+	if (_Laps <= 0 || 10 < _Laps)
+	{
+		ensureMsgf(false, TEXT("Laps was Invalid Value : %d"), _Laps);
+		return;
+	}
+
+	SessionInfo_.Laps_ = _Laps;
+	OnRep_SessionInfo();
+}
+
 TArray<FSessionPlayerInfo> ASessionGameState::GetPlayerList() const
 {
 	return PlayerList_;
+}
+
+void ASessionGameState::SetPrevGameResult(const TArray<FRaceGameResultData>& _PrevGameResult)
+{
+	PrevGameResult_ = _PrevGameResult;
+	OnRep_PrevGameResult();
+}
+
+const TArray<FRaceGameResultData>& ASessionGameState::GetPrevGameResult() const
+{
+	return PrevGameResult_;
 }
 
 void ASessionGameState::CheckAllPlayersReady()
@@ -186,4 +214,9 @@ void ASessionGameState::OnRep_SessionInfo() const
 void ASessionGameState::OnRep_PlayerList() const
 {
 	OnPlayerListUpdated_.ExecuteIfBound(PlayerList_);
+}
+
+void ASessionGameState::OnRep_PrevGameResult() const
+{
+	OnPrevGameResultUpdated_.ExecuteIfBound(PrevGameResult_);
 }

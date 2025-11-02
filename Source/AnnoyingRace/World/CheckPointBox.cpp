@@ -26,17 +26,17 @@ void ACheckPointBox::BeginPlay()
 }
 
 void ACheckPointBox::OnCollisionOverlapped(UPrimitiveComponent* _OverlappedComponent, AActor* _OtherActor,
-                                    UPrimitiveComponent* _OtherComp, int32 _OtherBodyIndex, bool _bFromSweep, const FHitResult& _SweepResult)
+									UPrimitiveComponent* _OtherComp, int32 _OtherBodyIndex, bool _bFromSweep, const FHitResult& _SweepResult)
 {
 	ACharacter* OverlappedCharacter = Cast<ACharacter>(_OtherActor);
 
-	//½ÃÃ¼ È¤Àº ´Ù¸¥ ¿ÀºêÁ§Æ®ÀÏ °æ¿ì return
+	//ì‹œì²´ í˜¹ì€ ë‹¤ë¥¸ ì˜¤ë¸Œì íŠ¸ì¼ ê²½ìš° return
 	if(nullptr == OverlappedCharacter || false == OverlappedCharacter->IsPlayerControlled())
 	{
 		return;
 	}
 
-	//¼­¹ö Ã³¸®
+	//ì„œë²„ ì²˜ë¦¬
 	if(HasAuthority())
 	{
 		ARaceGameMode* GM = Cast<ARaceGameMode>(GetWorld()->GetAuthGameMode());

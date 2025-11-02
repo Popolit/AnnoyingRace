@@ -63,6 +63,9 @@ public:
 
 	UFUNCTION(Client, Reliable)
 		void Client_CloseWaitingPlayersUI();
+
+	UFUNCTION(Client, Reliable)
+		void Client_OpenPlayerFinishUI();
 	
 	UFUNCTION(Client, Reliable)
 		void Client_EnableCharacterInput();
@@ -79,6 +82,9 @@ public:
 	UFUNCTION(Client, Reliable)
 		void Client_ShowCharacterDrawResult(const class UCharacterData* _DrawnCharacterData);
 
+	UFUNCTION(Client, Reliable)
+		void Client_OpenRaceFinishedUI(int32 _PlayerRank);
+	
 private:
 	UFUNCTION(Server, Reliable)
 		void Server_NotifyPlayerIsReady();
@@ -106,6 +112,12 @@ private:
 		TSubclassOf<UUserWidget> WaitingPlayersWidgetClass_;
 
 	UPROPERTY(EditDefaultsOnly)
+		TSubclassOf<UUserWidget> PlayerFinishWidgetClass_;
+
+	UPROPERTY(EditDefaultsOnly)
+		TSubclassOf<class URaceFinishedWidget> RaceFinishedWidgetClass_;
+	
+	UPROPERTY(EditDefaultsOnly)
 		TSubclassOf<class UCountDownWidget> CountDownWidgetClass_;
 
 	UPROPERTY(EditDefaultsOnly)
@@ -128,6 +140,12 @@ private:
 
 	UPROPERTY()
 		TObjectPtr<UUserWidget> WaitingPlayersWidget_;
+
+	UPROPERTY()
+		TObjectPtr<UUserWidget> PlayerFinishWidget_;
+
+	UPROPERTY()
+		TObjectPtr<URaceFinishedWidget> RaceFinishedWidget_;
 
 	UPROPERTY()
 		TObjectPtr<UCountDownWidget> CountdownWidget_;

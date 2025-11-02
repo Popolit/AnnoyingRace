@@ -40,12 +40,14 @@ public:
 
 	void RequestSetSessionJoinable(bool _bCanJoin);
 	
-	void RequestServerTravel(const FPrimaryAssetId& _MapId);
+	void RequestServerTravel(const FPrimaryAssetId& _MapId, const int32 _Laps);
 
-private:
 	void OpenMessageDialogue(const FText& _Message);
 
+private:
 	void CloseMessageDialogue();
+	
+	void OpenPrevRaceGameResult(const TArray<struct FRaceGameResultData>& _PrevRaceGameResult);
 	
 private:
 	UPROPERTY(VisibleDefaultsOnly)
@@ -57,11 +59,17 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 		TSubclassOf<class UMessageDialogueWidget> MessageDialogueWidgetClass_;
 
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class URaceGameResultWidget> RaceGameResultWidgetClass_;
+
 	UPROPERTY()
 		TObjectPtr<USessionWidget> SessionWidget_;
 
 	UPROPERTY()
 		TObjectPtr<UMessageDialogueWidget> MessageDialogueWidget_;
+
+	UPROPERTY()
+		TObjectPtr<URaceGameResultWidget> RaceGameResultWidget_;
 	
 	UPROPERTY(EditDefaultsOnly)
 		TObjectPtr<class UInputMappingContext> IMC_Default_;

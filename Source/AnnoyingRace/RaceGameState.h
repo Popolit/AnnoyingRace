@@ -24,11 +24,11 @@ protected:
 public:
 	void HandleStartRace();
 
-	void SetMaxCheckPointCount(uint8 _Count);
+	void SetMaxCheckPointCount(const uint8 _Count);
 
 	uint8 GetMaxCheckPointCount() const;
 
-	void SetMaxLap(uint8 _MaxLaps);
+	void SetMaxLap(const uint8 _MaxLaps);
 
 	uint8 GetMaxLap() const;
 

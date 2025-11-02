@@ -1,6 +1,7 @@
 #include "RaceGameInstance.h"
 
 #include "CommonSessionSubsystem.h"
+#include "GameFramework/PlayerState.h"
 
 #define LOCTEXT_NAMESPACE "ErrorMessages"
 
@@ -78,7 +79,12 @@ void URaceGameInstance::CleanUpSession(APlayerController* _PC)
 	}
 }
 
-void URaceGameInstance::SetRacePlayerCount(int32 _RacePlayerCount)
+FPrimaryAssetId URaceGameInstance::GetSessionMap() const
+{
+	return SessionMap_;
+}
+
+void URaceGameInstance::SetRacePlayerCount(const int32 _RacePlayerCount)
 {
 	RacePlayerCount_ = _RacePlayerCount;
 }
@@ -88,6 +94,45 @@ int32 URaceGameInstance::GetRacePlayerCount() const
 	return RacePlayerCount_;
 }
 
+void URaceGameInstance::SetRaceLaps(const int32 _RaceLaps)
+{
+	RaceLaps_ = _RaceLaps;
+}
+
+uint8 URaceGameInstance::GetRaceLaps() const
+{
+	return RaceLaps_;
+}
+
+void URaceGameInstance::SetPrevGameResult(const TArray<TObjectPtr<APlayerState>>& _PlayerRankings)
+{
+	if (false == PrevRaceGameResult_.IsEmpty())
+	{
+		UE_LOG(LogTemp, Error, TEXT("PrevRaceGameResult is not empty"));
+		return;
+	}
+	
+	int32 Rank = 1;
+	for (const auto& PS :  _PlayerRankings)
+	{
+		PrevRaceGameResult_.Emplace(PS->GetPlayerName(), Rank++);
+	}
+}
+
+bool URaceGameInstance::CheckPrevGameWasExist() const
+{
+	return !(PrevRaceGameResult_.IsEmpty());
+}
+
+TArray<FRaceGameResultData> URaceGameInstance::GetPrevGameResult() const
+{
+	return PrevRaceGameResult_;
+}
+
+void URaceGameInstance::ClearPrevGameResult()
+{
+	PrevRaceGameResult_.Empty();
+}
 
 void URaceGameInstance::OnCreateSessionComplete(const FOnlineResultInformation& _Result)
 {

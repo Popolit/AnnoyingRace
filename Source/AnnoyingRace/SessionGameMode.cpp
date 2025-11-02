@@ -3,6 +3,8 @@
 #include "SessionGameState.h"
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystemUtils.h"
+#include "RaceGameInstance.h"
+#include "RaceGameState.h"
 #include "SessionPlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "Interfaces/OnlineSessionInterface.h"
@@ -19,6 +21,17 @@ void ASessionGameMode::BeginPlay()
     Super::BeginPlay();
 
     FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &ASessionGameMode::OnPostLoadMap);
+
+	//세션에서 레이스 진행 결과가 있었다면, 이를 받아 GameState에 전달
+	auto GI = GetGameInstance<URaceGameInstance>();
+	check(GI);
+
+	if (GI->CheckPrevGameWasExist())
+	{
+		auto GS = GetGameState<ASessionGameState>();
+		GS->SetPrevGameResult(GI->GetPrevGameResult());
+		GI->ClearPrevGameResult();
+	}
 }
 
 void ASessionGameMode::PostLogin(APlayerController* _NewPlayer)
@@ -161,6 +174,8 @@ void ASessionGameMode::OnSessionUpdated(FName _SessionName, bool _bWasSuccessful
 			{
 				SessionInfo.MaxUserCount_ = Session->SessionSettings.NumPublicConnections;
 			}
+
+			SessionInfo.Laps_ = GS->GetSessionInfo().Laps_;
 			
 			FString MapName;
 			Session->SessionSettings.Get(FName("MAPDATA"), MapName);

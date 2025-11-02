@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameState.h"
+#include "World/RaceGameResultData.h"
 #include "SessionGameState.generated.h"
 
 USTRUCT()
@@ -45,6 +46,7 @@ public:
 		SelectedMapData_(),
 		MaxUserCount_(8),
 		CurrentUserCount_(1),
+		Laps_(3),
 		bIsPrivate_(false) {}
 	
 	UPROPERTY()
@@ -60,12 +62,16 @@ public:
 		uint8 CurrentUserCount_;
 
 	UPROPERTY()
+		int32 Laps_;
+
+	UPROPERTY()
 		bool bIsPrivate_;
 };
 
 
 DECLARE_DELEGATE_OneParam(FOnPlayerListUpdated, const TArray<FSessionPlayerInfo>&);
 DECLARE_DELEGATE_OneParam(FOnSessionInfoUpdated, const FSessionInfo&);
+DECLARE_DELEGATE_OneParam(FOnPrevGameResultUpdated, const TArray<FRaceGameResultData>&);
 
 /**
  * Session Game State
@@ -93,8 +99,14 @@ public:
 
 	void SetHost(const FUniqueNetIdRepl& _HostId);
 
+	void SetLaps(const int32 _Laps);
+
 	TArray<FSessionPlayerInfo> GetPlayerList() const;
 
+	void SetPrevGameResult(const TArray<FRaceGameResultData>& _PrevGameResult);
+	
+	const TArray<FRaceGameResultData>& GetPrevGameResult() const;
+	
 private:
 	void CheckAllPlayersReady();
 	
@@ -106,6 +118,9 @@ private:
 	UFUNCTION()
 		void OnRep_PlayerList() const;
 
+	UFUNCTION()
+		void OnRep_PrevGameResult() const;
+
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_SessionInfo)
 		FSessionInfo SessionInfo_;
@@ -116,7 +131,10 @@ private:
 	UPROPERTY(Replicated)
 		FUniqueNetIdRepl HostId_;
 
+	UPROPERTY(ReplicatedUsing = OnRep_PrevGameResult)
+		TArray<FRaceGameResultData> PrevGameResult_;
 public:
 	FOnPlayerListUpdated OnPlayerListUpdated_;
 	FOnSessionInfoUpdated OnSessionInfoUpdated_;
+	FOnPrevGameResultUpdated OnPrevGameResultUpdated_;
 };
