@@ -10,6 +10,7 @@
 #include "World/TrackSplineActor.h"
 #include "Characters/CharacterData.h"
 #include "Engine/AssetManager.h"
+#include "World/CheckPointBox.h"
 
 ARaceGameMode::ARaceGameMode()
 {
@@ -46,6 +47,19 @@ void ARaceGameMode::StartMatch()
 	ARaceGameState* GS = GetGameState<ARaceGameState>();
 	check(GS);
 
+	TArray<AActor*> CheckPoints;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACheckPointBox::StaticClass(), CheckPoints);
+
+	ACheckPointBox* StartCheckPoint = nullptr;
+	for (AActor* CheckPoint : CheckPoints)
+	{
+		auto CP = Cast<ACheckPointBox>(CheckPoint);
+		if (CP && CP->IsStartPoint())
+		{
+			StartCheckPoint = CP;
+			break;
+		}
+	}
 	for(auto Player : GS->PlayerArray)
 	{
 		auto PC = Cast<ARacePlayerController>(Player->GetPlayerController());
@@ -57,6 +71,12 @@ void ARaceGameMode::StartMatch()
 			//인트로 연출 재생
 			PC->Client_PlaySequence("Intro");
 		}
+
+		auto PS = Cast<ARacePlayerState>(Player);
+		if (PS)
+		{
+			PS->SetCheckPoint(StartCheckPoint);
+		}
 	}
 }
 
@@ -67,11 +87,6 @@ void ARaceGameMode::PostLogin(APlayerController* _NewPlayer)
 	check(PC);
 
 	PC->Client_OpenWaitingPlayersUI();
-
-	ARacePlayerState* RacePlayerState = _NewPlayer->GetPlayerState<ARacePlayerState>();
-	check(RacePlayerState);
-	RacePlayerState->SetCheckPointIndex(0);
-	UE_LOG(LogTemp, Display, TEXT("%s - PostLogin"), *_NewPlayer->PlayerState->GetPlayerName());
 }
 
 bool ARaceGameMode::ReadyToStartMatch_Implementation()
@@ -84,7 +99,6 @@ bool ARaceGameMode::ReadyToStartMatch_Implementation()
 		const int32 ExpectedPlayerCount = GI->GetRacePlayerCount();
 		return 0 < ExpectedPlayerCount && ExpectedPlayerCount == ReadiedPlayerCount_;
 	}
-
 	return false;
 }
 
@@ -139,8 +153,7 @@ void ARaceGameMode::SpawnNewCharacter(APlayerController* _PC)
 	SpawnParams.Owner = _PC;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-	//레이스가 아직 시작하지 않은 첫 Spawn
-	//PlayerStart에 Spawn, 레이스 준비가 된 플레이어로 간주함.
+	//false인 경우, PlayerStart에서 시작
 	if (false == bRaceStarted_)
 	{
 		const AActor* PlayerStart = FindPlayerStart(_PC);
@@ -151,42 +164,54 @@ void ARaceGameMode::SpawnNewCharacter(APlayerController* _PC)
 	}
 	else
 	{
-		const uint8 CheckPointIndex = PS->GetCheckPointIndex();
-		SpawnTransform = TrackSpline_->GetSplinePointTransform(CheckPointIndex);
-
-		{
-		ARacePlayerController* PC = Cast<ARacePlayerController>(_PC);
-		if(PC)
-			PC->Client_EnableCharacterInput();
-		}
+		SpawnTransform = PS->GetSpawnTransform();
+		SpawnTransform.SetScale3D(FVector(1,1,1));
 	}
-
-	ACharacter* NextCharacter = GetWorld()->SpawnActor<ACharacter>(NextCharacterClass, SpawnTransform, SpawnParams);
-	check(NextCharacter);
-	if(_PC->GetPawn())
+	
+	auto PC = Cast<ARacePlayerController>(_PC);
+	if(PC)
 	{
-		_PC->GetPawn()->Destroy();
+		PC->Client_EnableCharacterInput();
+		ACharacter* NextCharacter = GetWorld()->SpawnActor<ACharacter>(NextCharacterClass, SpawnTransform, SpawnParams);
+		check(NextCharacter);
+		if(PC->GetPawn())
+		{
+			PC->GetPawn()->Destroy();
+		}
+		PC->Possess(NextCharacter);
 	}
-	_PC->Possess(NextCharacter);
 }
 
 
-void ARaceGameMode::HandleCheckPointPassed(uint8 _CheckPointIndex, APlayerController* _PC)
+void ARaceGameMode::HandleCheckPointPassed(APlayerController* _PC, const ACheckPointBox* _PassedCheckPoint)
 {
 	ARacePlayerState* PS = _PC->GetPlayerState<ARacePlayerState>();
 	ARaceGameState* GS = GetGameState<ARaceGameState>();
 	check(PS && GS);
 
-	const uint8 TargetCheckPointIndex = (PS->GetCheckPointIndex() + 1) % GS->GetMaxCheckPointCount();
-	if(_CheckPointIndex != TargetCheckPointIndex)
+	if (nullptr == _PassedCheckPoint)
 	{
+		UE_LOG(LogTemp, Error, TEXT("CheckPoint was nullptr"));
+		return;
+	}
+
+	const ACheckPointBox* PlayerCheckPoint = Cast<ACheckPointBox>(PS->GetPassedCheckPoint());
+	if (nullptr == PlayerCheckPoint)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Player's CheckPoint was nullptr"));
 		return;
 	}
 	
-	//한바퀴를 돌아 Laps 증가
-	if(_CheckPointIndex == 0)
+	//목표 체크포인트가 아니면 return
+	if (_PassedCheckPoint != PlayerCheckPoint->GetTargetCheckPoint())
 	{
-		//완주
+		return;
+	}
+
+	//시작점 통과 : Laps 증가
+	if(_PassedCheckPoint->IsStartPoint())
+	{
+		//완주 했을 때
 		if (GetGameState<ARaceGameState>()->GetMaxLap() <= PS->GetLaps())
 		{
 			PS->SetRaceFinished();
@@ -202,19 +227,20 @@ void ARaceGameMode::HandleCheckPointPassed(uint8 _CheckPointIndex, APlayerContro
 				}
 				PassedPawn->Destroy();
 			}
-			
 			if (PC)
 			{
 				PC->SetSpectatorMode(Transform);
 				PC->Client_OpenPlayerFinishUI();
 			}
-
+			
+			//전원 완주
 			if (CheckAllPlayersFinishedRace())
 			{
 				FinishRace();
 			}
 			return;
 		}
+		
 		PS->IncreaseLap();
 	}
 	
@@ -223,7 +249,6 @@ void ARaceGameMode::HandleCheckPointPassed(uint8 _CheckPointIndex, APlayerContro
 	{
 		PassedPawn->Destroy();
 	}
-	PS->SetCheckPointIndex(TargetCheckPointIndex);
 	DrawNewCharacter(_PC);
 }
 
@@ -268,7 +293,7 @@ void ARaceGameMode::ShuffleCharacterQueue()
 	}
 }
 
-bool ARaceGameMode::CheckAllPlayersFinishedRace()
+bool ARaceGameMode::CheckAllPlayersFinishedRace() const
 {
 	auto GS = GetGameState<ARaceGameState>();
 

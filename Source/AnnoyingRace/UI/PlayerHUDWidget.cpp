@@ -36,6 +36,7 @@ void UPlayerHUDWidget::NativeConstruct()
 				if(CharacterData)
 				{
 					SlotWidget->SetSlotFromCharacterData(CharacterData);
+					SlotWidget->SetPlayerName(PlayerState->GetPlayerName());
 				}
 				CP_LeaderBoard_->AddChildToCanvas(SlotWidget);
 				PlayerSlots_.Add(PlayerState, SlotWidget);
@@ -47,7 +48,6 @@ void UPlayerHUDWidget::NativeConstruct()
 					Args.Add(TEXT("UserRank"), FText::AsNumber(Rank + 1));
 					Args.Add(TEXT("UserCount"), FText::AsNumber(Rankings.Num()));
 					Txt_UserRank_->SetText(FText::Format(FText::FromString(TEXT("{UserRank} / {UserCount}")), Args));
-
 				}
 			}
 		}

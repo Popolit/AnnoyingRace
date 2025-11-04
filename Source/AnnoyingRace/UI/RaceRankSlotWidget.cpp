@@ -3,6 +3,7 @@
 #include "Characters/CharacterData.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
+#include "Components/TextBlock.h"
 
 
 void URaceRankSlotWidget::NativeConstruct()
@@ -28,6 +29,11 @@ void URaceRankSlotWidget::NativeTick(const FGeometry& _MyGeometry, float _InDelt
 	}
 }
 
+void URaceRankSlotWidget::SetPlayerName(const FString& _PlayerName) const
+{
+	Txt_PlayerName_->SetText(FText::FromString(_PlayerName));
+}
+
 void URaceRankSlotWidget::SetSlotFromCharacterData(const UCharacterData* _CharacterData)
 {
 	SetImage(_CharacterData->GetCharacterIcon());
@@ -39,12 +45,8 @@ void URaceRankSlotWidget::SetRank(uint8 _Rank)
 }
 
 
-void URaceRankSlotWidget::SetImage(TSoftObjectPtr<UTexture2D> _Image)
+void URaceRankSlotWidget::SetImage(TSoftObjectPtr<UTexture2D> _Image) const
 {
 	Img_UserCharacter_->SetBrushFromSoftTexture(_Image);
 }
 
-void URaceRankSlotWidget::SetText(const FString& _Text)
-{
-	//TODO : UserID를 셋팅
-}

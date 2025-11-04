@@ -22,6 +22,7 @@ public:
 	virtual void PostLogin(APlayerController* _NewPlayer) override;
 
 	virtual bool ReadyToStartMatch_Implementation() override;
+
 public:
 	void AddReadiedPlayerCount();
 	
@@ -34,7 +35,7 @@ public:
 	void SpawnNewCharacter(APlayerController* _PC);
 
 	//체크포인트 달성시 Laps 증가 및 캐릭터 드로우
-	void HandleCheckPointPassed(uint8 _CheckPointIndex, APlayerController* _PC);
+	void HandleCheckPointPassed(APlayerController* _PC, const class ACheckPointBox* _PassedCheckPoint);
 
 private:
 	UFUNCTION(BlueprintCallable)
@@ -44,7 +45,7 @@ private:
 
 	void ShuffleCharacterQueue();
 
-	bool CheckAllPlayersFinishedRace();
+	bool CheckAllPlayersFinishedRace() const;
 
 	void FinishRace();
 

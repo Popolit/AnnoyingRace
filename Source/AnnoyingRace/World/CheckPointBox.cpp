@@ -1,16 +1,12 @@
 #include "CheckPointBox.h"
 
 #include "RaceGameMode.h"
-#include "Camera/CameraComponent.h"
 #include "Components/ShapeComponent.h"
 #include "GameFramework/Character.h"
 
 ACheckPointBox::ACheckPointBox()
 {
 	SetRootComponent(Root_);
-	Camera_ = CreateDefaultSubobject<UCameraComponent>("Camera");
-	Camera_->SetupAttachment(Root_);
-	Camera_->SetRelativeLocation(FVector::ZeroVector);
 }
 
 void ACheckPointBox::BeginPlay()
@@ -25,8 +21,18 @@ void ACheckPointBox::BeginPlay()
 	}
 }
 
+TObjectPtr<const ACheckPointBox> ACheckPointBox::GetTargetCheckPoint() const
+{
+	return TargetCheckPoint_;
+}
+
+bool ACheckPointBox::IsStartPoint() const
+{
+	return bIsStartPoint_;
+}
+
 void ACheckPointBox::OnCollisionOverlapped(UPrimitiveComponent* _OverlappedComponent, AActor* _OtherActor,
-									UPrimitiveComponent* _OtherComp, int32 _OtherBodyIndex, bool _bFromSweep, const FHitResult& _SweepResult)
+                                           UPrimitiveComponent* _OtherComp, int32 _OtherBodyIndex, bool _bFromSweep, const FHitResult& _SweepResult)
 {
 	ACharacter* OverlappedCharacter = Cast<ACharacter>(_OtherActor);
 
@@ -45,8 +51,7 @@ void ACheckPointBox::OnCollisionOverlapped(UPrimitiveComponent* _OverlappedCompo
 			APlayerController* PC = Cast<APlayerController>(OverlappedCharacter->GetController());
 			check(PC);
 
-			GM->HandleCheckPointPassed(Index_, PC);
+			GM->HandleCheckPointPassed(PC, this);
 		}
 	}
-
 }

@@ -28,10 +28,12 @@ public:
 
 	void IncreaseLap();
 
-	uint8 GetCheckPointIndex() const;
+	TObjectPtr<const AActor> GetPassedCheckPoint() const;
 
-	void SetCheckPointIndex(uint8 _Index);
+	void SetCheckPoint(const AActor* _TargetCheckPoint);
 
+	FTransform GetSpawnTransform() const;
+	
 	float GetTotalDistance() const;
 
 	void SetTotalDistance(float _Distance);
@@ -54,7 +56,7 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_Laps)
 		uint8 Laps_;
 
-	uint8 CurrentCheckPointIndex_;
+	TObjectPtr<const AActor> PassedCheckPoint_;
 
 	float Distance_;
 

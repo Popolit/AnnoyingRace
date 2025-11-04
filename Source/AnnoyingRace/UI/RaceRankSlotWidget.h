@@ -18,20 +18,20 @@ protected:
 	virtual void NativeTick(const FGeometry& _MyGeometry, float _InDeltaTime) override;
 
 public:
+	void SetPlayerName(const FString& _PlayerName) const;
+	
 	void SetSlotFromCharacterData(const class UCharacterData* _CharacterData);
 
 	void SetRank(uint8 _Rank);
 
 private:
-	void SetImage(TSoftObjectPtr<UTexture2D> _Image);
-
-	void SetText(const FString& _Text);
+	void SetImage(TSoftObjectPtr<UTexture2D> _Image) const;
 
 private:
 	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<class UImage> Img_UserCharacter_;
 	UPROPERTY(meta = (BindWidget))
-		TObjectPtr<class UTextBlock> Txt_UserID_;
+		TObjectPtr<class UTextBlock> Txt_PlayerName_;
 
 	float TargetYPosition_;
 	float CurrentYPosition_;

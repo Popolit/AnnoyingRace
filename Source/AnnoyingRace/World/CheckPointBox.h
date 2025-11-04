@@ -15,7 +15,11 @@ public:
 	ACheckPointBox();
 
 	virtual void BeginPlay() override;
+	
+	TObjectPtr<const ACheckPointBox> GetTargetCheckPoint() const;
 
+	bool IsStartPoint() const;
+	
 public:
 	UFUNCTION()
 		void OnCollisionOverlapped(UPrimitiveComponent* _OverlappedComponent,
@@ -27,11 +31,11 @@ public:
 
 private:
 	UPROPERTY(EditInstanceOnly)
-		uint8 Index_;
-
-	UPROPERTY(VisibleDefaultsOnly)
-		TObjectPtr<USceneComponent> Root_;
+		TObjectPtr<const ACheckPointBox> TargetCheckPoint_;
 
 	UPROPERTY(EditInstanceOnly)
-		TObjectPtr<class UCameraComponent> Camera_;
+		bool bIsStartPoint_;
+	
+	UPROPERTY(VisibleDefaultsOnly)
+		TObjectPtr<USceneComponent> Root_;
 };

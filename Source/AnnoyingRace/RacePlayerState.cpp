@@ -1,13 +1,12 @@
 #include "RacePlayerState.h"
 
-#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
 ARacePlayerState::ARacePlayerState()
 {
 	Laps_ = 1;
-	CurrentCheckPointIndex_ = 0;
 	Distance_ = 0;
+	bFinished_ = false;
 }
 
 
@@ -49,14 +48,20 @@ void ARacePlayerState::IncreaseLap()
 	}
 }
 
-uint8 ARacePlayerState::GetCheckPointIndex() const
+TObjectPtr<const AActor> ARacePlayerState::GetPassedCheckPoint() const
 {
-	return CurrentCheckPointIndex_;
+	return PassedCheckPoint_;
 }
 
-void ARacePlayerState::SetCheckPointIndex(uint8 _Index)
+void ARacePlayerState::SetCheckPoint(const AActor* _CheckPoint)
 {
-	CurrentCheckPointIndex_ = _Index;
+	PassedCheckPoint_ = _CheckPoint;
+	check(PassedCheckPoint_);
+}
+
+FTransform ARacePlayerState::GetSpawnTransform() const
+{
+	return PassedCheckPoint_->GetTransform();
 }
 
 float ARacePlayerState::GetTotalDistance() const
