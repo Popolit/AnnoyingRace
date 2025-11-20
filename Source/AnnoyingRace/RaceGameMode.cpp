@@ -243,6 +243,8 @@ void ARaceGameMode::HandleCheckPointPassed(APlayerController* _PC, const ACheckP
 		
 		PS->IncreaseLap();
 	}
+
+	PS->SetCheckPoint(PlayerCheckPoint->GetTargetCheckPoint());
 	
 	APawn* PassedPawn = _PC->GetPawn();
 	if (PassedPawn)

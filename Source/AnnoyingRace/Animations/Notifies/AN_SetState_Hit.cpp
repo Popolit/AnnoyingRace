@@ -8,7 +8,7 @@ void UAN_SetState_Hit::Notify(USkeletalMeshComponent* _MeshComp, UAnimSequenceBa
 
 	if (ensureMsgf(OwnerActor, TEXT("%s's OwnerActor was nullptr"), *this->GetName()))
 	{
-		//Editor PreviewÀÎ °æ¿ì
+		//Editor Preview
 		if (false == OwnerActor->HasActorBegunPlay())
 		{
 			return;
@@ -18,7 +18,7 @@ void UAN_SetState_Hit::Notify(USkeletalMeshComponent* _MeshComp, UAnimSequenceBa
 
 		if (ensureMsgf(StateComponent, TEXT("%s's StateComponent was nullptr"), *OwnerActor->GetName()))
 		{
-			StateComponent->SetState(EState::Hit);
+			StateComponent->SetState(EState::Casting);
 		}
 	}
 }

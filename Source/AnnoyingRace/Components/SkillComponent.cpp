@@ -1,14 +1,25 @@
 #include "SkillComponent.h"
 
 #include "Engine/ActorChannel.h"
-#include "Skills/Skill.h"
 #include "GameFramework/Character.h"
 #include "Net/UnrealNetwork.h"
+#include "Skills/Skill_Target.h"
 
 
 USkillComponent::USkillComponent()
 {
 	SetIsReplicatedByDefault(true);
+	PrimaryComponentTick.bCanEverTick = true;
+}
+
+void USkillComponent::TickComponent(float _DeltaTime, enum ELevelTick _TickType,
+	FActorComponentTickFunction* _ThisTickFunction)
+{
+	Super::TickComponent(_DeltaTime , _TickType , _ThisTickFunction);
+	if (Skill_)
+	{
+		Skill_->Tick(_DeltaTime);
+	}
 }
 
 void USkillComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -46,7 +57,43 @@ uint8 USkillComponent::GetSkillDamage() const
 {
 	if (Skill_)
 	{
-		return Skill_->GetDamage();
+		return Skill_->GetSkillDamage();
+	}
+	return 0;
+}
+
+void USkillComponent::GetSkillTargets(TArray<AActor*>& _OutTargets) const
+{
+	auto TargetingSkill = Cast<USkill_Target>(Skill_);
+	if (TargetingSkill)
+	{
+		TargetingSkill->GetTargets(_OutTargets);
+	}
+}
+
+TSoftObjectPtr<UTexture2D> USkillComponent::GetSkillImg()
+{
+	if (Skill_)
+	{
+		return Skill_->GetSkillImg();
+	}
+	return nullptr;
+}
+
+int32 USkillComponent::GetSkillCount() const
+{
+	if (Skill_)
+	{
+		return Skill_->GetSkillCount();
+	}
+	return 0;
+}
+
+float USkillComponent::GetSkillCoolDownRatio() const
+{
+	if (Skill_)
+	{
+		return Skill_->GetSkillCoolDownRatio();
 	}
 	return 0;
 }
@@ -59,6 +106,7 @@ void USkillComponent::OnRep_Skill()
 		check(Character);
 
 		Skill_->Initialize(Character);
+		Skill_->GetSkillImg();
 	}
 }
 

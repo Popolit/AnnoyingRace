@@ -13,8 +13,6 @@ class ANNOYINGRACE_API USkill_BlowWind : public USkill_NonTarget
 	GENERATED_BODY()
 
 public:
-	virtual void Initialize(ACharacter* _Character) override;
-
 	virtual void TriggerSkill(ACharacter* _Character) override;
 
 private:

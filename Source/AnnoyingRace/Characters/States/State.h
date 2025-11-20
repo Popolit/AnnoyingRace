@@ -19,6 +19,7 @@ public:
 	virtual void Move(const struct FInputActionInstance& _Instance, ACharacter* _Character) PURE_VIRTUAL(...);
 	virtual void Look(const struct FInputActionInstance& _Instance, ACharacter* _Character) PURE_VIRTUAL(...);
 	virtual void SkillButtonPushed(const struct FInputActionInstance& _Instance, ACharacter* _Character) PURE_VIRTUAL(...);
-
+	virtual void CancelSkillButtonPushed(const struct FInputActionInstance& _Instance, ACharacter* _Character) PURE_VIRTUAL(...);
+	
 	virtual void TakeDamage(ACharacter* _Character, float _DamageAmount, FDamageEvent const& _DamageEvent, AController* _EventInstigator, AActor* _DamageCauser) PURE_VIRTUAL(...);
 };

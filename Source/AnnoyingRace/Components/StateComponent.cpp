@@ -1,9 +1,10 @@
 #include "StateComponent.h"
 
 #include "Characters/States/State_Idle.h"
-#include "Characters/States/State_Hit.h"
+#include "Characters/States/State_Casting.h"
 #include "Characters/States/State_Skill.h"
 #include "Characters/States/State_Death.h"
+#include "Characters/States/State_Incapacitated.h"
 #include "GameFramework/Character.h"
 
 UStateComponent::UStateComponent()
@@ -16,8 +17,9 @@ void UStateComponent::BeginPlay()
 	Super::BeginPlay();
 
 	States_.Add(EState::Idle, NewObject<UState_Idle>(this, "State_Idle"));
-	States_.Add(EState::Hit, NewObject<UState_Hit>(this, "State_Hit"));
+	States_.Add(EState::Casting, NewObject<UState_Casting>(this, "State_Casting"));
 	States_.Add(EState::Skill, NewObject<UState_Skill>(this, "State_Skill"));
+	States_.Add(EState::Incapacitated, NewObject<UState_Incapacitated>(this, "State_Incapacitated"));
 	States_.Add(EState::Death, NewObject<UState_Death>(this, "State_Death"));
 
 	CurrentState_ = States_[EState::Idle];
@@ -33,6 +35,11 @@ void UStateComponent::SetState(EState _NewState)
 {
 	if(CurrentState_)
 	{
+		//사망 상태는 변경할 수 없음
+		if (CheckCurrentState(EState::Death))
+		{
+			return;
+		}
 		CurrentState_->Exit(this);
 	}
 	CurrentState_ = States_[_NewState];
@@ -63,8 +70,16 @@ void UStateComponent::SkillButtonPushed(const FInputActionInstance& _Instance)
 	}
 }
 
+void UStateComponent::CancelSkillButtonPushed(const struct FInputActionInstance& _Instance)
+{
+	if (CurrentState_)
+	{
+		CurrentState_->CancelSkillButtonPushed(_Instance, Cast<ACharacter>(GetOuter()));
+	}
+}
+
 void UStateComponent::TakeDamage(ACharacter* _Character, float _DamageAmount, FDamageEvent const& _DamageEvent, AController* _EventInstigator,
-	AActor* _DamageCauser)
+                                 AActor* _DamageCauser)
 {
 	if(CurrentState_)
 	{

@@ -16,6 +16,7 @@ void ARacePlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(ARacePlayerState, Laps_);
 	DOREPLIFETIME(ARacePlayerState, CharacterData_);
 	DOREPLIFETIME(ARacePlayerState, bFinished_);
+	DOREPLIFETIME(ARacePlayerState, PassedCheckPoint_);
 }
 
 TObjectPtr<UCharacterData> ARacePlayerState::GetCharacterData() const

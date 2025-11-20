@@ -56,7 +56,11 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_Laps)
 		uint8 Laps_;
 
-	TObjectPtr<const AActor> PassedCheckPoint_;
+	UPROPERTY(Replicated)
+		bool bFinished_;
+
+	UPROPERTY(Replicated)
+		TObjectPtr<const AActor> PassedCheckPoint_;
 
 	float Distance_;
 
@@ -64,7 +68,4 @@ public:
 	FOnCharacterDataSet OnCharacterDataSet_;
 
 	FOnLapsChanged OnLapsChanged_;
-
-private:
-	bool bFinished_;
 };

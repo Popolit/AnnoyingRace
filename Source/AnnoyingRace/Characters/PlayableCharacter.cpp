@@ -43,6 +43,13 @@ void APlayableCharacter::BeginPlay()
 	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
 	MovementComponent->MaxWalkSpeed = StatusComponent_->GetSpeed();
 	MovementComponent->bOrientRotationToMovement = true;
+
+	auto CharacterMaterial = GetMesh()->GetMaterial(0);
+	if (CharacterMaterial)
+	{
+		CharacterMI_ = UMaterialInstanceDynamic::Create(CharacterMaterial, this);
+		GetMesh()->SetMaterial(0, CharacterMI_);
+	}
 }
 
 void APlayableCharacter::SetupPlayerInputComponent(UInputComponent* _PlayerInputComponent)
@@ -61,6 +68,10 @@ void APlayableCharacter::SetupPlayerInputComponent(UInputComponent* _PlayerInput
 	if (ensureMsgf(IA_UseSkill_, TEXT("%s's IA_UseSkill was nullptr"), *GetName()))
 	{
 		IC->BindAction(IA_UseSkill_, ETriggerEvent::Triggered, StateComponent_.Get(), &UStateComponent::SkillButtonPushed);
+	}
+	if (ensureMsgf(IA_CancelSkill_, TEXT("%s's IA_CancelSkill was nullptr"), *GetName()))
+	{
+		IC->BindAction(IA_CancelSkill_, ETriggerEvent::Triggered, StateComponent_.Get(), &UStateComponent::CancelSkillButtonPushed);
 	}
 }
 
@@ -104,6 +115,11 @@ void APlayableCharacter::SkillButtonPushed()
 	OnSkillButtonPushed_.ExecuteIfBound(this);
 }
 
+void APlayableCharacter::CancelSkillButtonPushed()
+{
+	OnCancelSkillButtonPushed_.ExecuteIfBound(this);
+}
+
 //장외로 떨어질 시 사망 처리
 void APlayableCharacter::FellOutOfWorld(const UDamageType& _DmgType)
 {
@@ -127,6 +143,14 @@ void APlayableCharacter::ProcessDeath()
 			}
 			Multicast_ProcessDeath();
 		}
+	}
+}
+
+void APlayableCharacter::SetOpacity(float _Opacity)
+{
+	if (CharacterMI_)
+	{
+		CharacterMI_->SetScalarParameterValue(FName("Opacity"), _Opacity);
 	}
 }
 

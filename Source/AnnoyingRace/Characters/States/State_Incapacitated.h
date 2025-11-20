@@ -1,19 +1,16 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
-#include "State.h"
-#include "State_Hit.generated.h"
+#include "Characters/States/State.h"
+#include "State_Incapacitated.generated.h"
 
 /**
- * Hit State
+ * Hard CC (Crowd Control) State
  */
 UCLASS()
-class ANNOYINGRACE_API UState_Hit : public UState
+class ANNOYINGRACE_API UState_Incapacitated : public UState
 {
 	GENERATED_BODY()
-
 public:	
 	virtual void Enter(class UStateComponent* _Comp) override;
 	virtual void Exit(UStateComponent* _Comp) override;

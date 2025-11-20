@@ -30,6 +30,9 @@ private:
 	UPROPERTY(meta = (BindWidget))
 		TObjectPtr<class UCanvasPanel> CP_LeaderBoard_;
 
+	UPROPERTY(meta = (BindWidget))
+		TObjectPtr<class USkillWidget> SkillWidget_;
+
 	UPROPERTY(EditDefaultsOnly)
 		TSubclassOf<class URaceRankSlotWidget> SlotWidgetClass_;
 

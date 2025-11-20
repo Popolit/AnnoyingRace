@@ -7,7 +7,7 @@
 /**
  * Skill Conditions
  */
-UCLASS(Abstract, HideDropdown)
+UCLASS(Abstract, HideDropDown, EditInlineNew)
 class ANNOYINGRACE_API UCondition : public UObject
 {
 	GENERATED_BODY()

@@ -536,7 +536,7 @@ void UCommonSessionSubsystem::CreateOnlineSessionInternalOSSv1(ULocalPlayer* Loc
 	if (ensure(UserId.IsValid()))
 	{
 		FCommonSession_OnlineSessionSettings HostSettings(Request->OnlineMode == ECommonSessionOnlineMode::LAN, Request->bUsePresence, MaxPlayers);
-		HostSettings.NumPublicConnections = 1;
+		HostSettings.NumPublicConnections = 8;
 		HostSettings.NumPrivateConnections = Request->MaxPlayerCount - 1;
 		HostSettings.bIsLANMatch = Request->OnlineMode == ECommonSessionOnlineMode::LAN;
 		HostSettings.bUsesPresence = Request->bUsePresence;

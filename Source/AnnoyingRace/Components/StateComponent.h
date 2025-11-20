@@ -8,8 +8,9 @@ UENUM(BlueprintType)
 enum class EState : uint8
 {
 	Idle    UMETA(DisplayName = "Idle"),
-	Hit    UMETA(DisplayName = "Hit"),
+	Casting UMETA(DisplayName = "Casting"),
 	Skill  UMETA(DisplayName = "Skill"),
+	Incapacitated UMETA(DisplayName = "Incapacitated"),
 	Death	UMETA(DisplayName = "Death"),
 };
 
@@ -37,6 +38,7 @@ public:
 	void Move(const struct FInputActionInstance& _Instance);
 	void Look(const struct FInputActionInstance& _Instance);
 	void SkillButtonPushed(const struct FInputActionInstance& _Instance);
+	void CancelSkillButtonPushed(const struct FInputActionInstance& _Instance);
 
 	void TakeDamage(ACharacter* _Character, float _DamageAmount, FDamageEvent const& _DamageEvent, AController* _EventInstigator, AActor* _DamageCauser);
 

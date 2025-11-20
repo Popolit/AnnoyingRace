@@ -5,7 +5,7 @@
 #include "PlayableCharacter.generated.h"
 
 DECLARE_DELEGATE_OneParam(FOnCharacterDied, ACharacter*);
-DECLARE_DELEGATE_OneParam(FOnSkillButtonPushed, ACharacter*);
+DECLARE_DELEGATE_OneParam(FOnButtonPushed, ACharacter*);
 
 UCLASS()
 class ANNOYINGRACE_API APlayableCharacter : public ACharacter
@@ -26,12 +26,16 @@ public:
 
 	void SkillButtonPushed();
 
+	void CancelSkillButtonPushed();
+
 	virtual void FellOutOfWorld(const class UDamageType& _DmgType) override;
 	
 	void ProcessDeath();
 
 	UFUNCTION(Server, Reliable)
 		void Server_PlayAnimMontage(UAnimMontage* _Montage);
+
+	void SetOpacity(float _Opacity);
 
 private:
 	UFUNCTION(NetMulticast, Reliable)
@@ -47,7 +51,8 @@ private:
 
 public:
 	FOnCharacterDied OnCharacterDied_;
-	FOnSkillButtonPushed OnSkillButtonPushed_;
+	FOnButtonPushed OnSkillButtonPushed_;
+	FOnButtonPushed OnCancelSkillButtonPushed_;
 
 	//Components
 private:
@@ -63,6 +68,8 @@ private:
 		TObjectPtr<class UStatusComponent> StatusComponent_;
 	UPROPERTY(VisibleDefaultsOnly)
 		TObjectPtr<class USkillComponent> SkillComponent_;
+	UPROPERTY()
+		TObjectPtr<UMaterialInstanceDynamic> CharacterMI_;
 
 	//Inputs
 private:
@@ -72,6 +79,8 @@ private:
 		TObjectPtr<class UInputAction> IA_Look_;
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 		TObjectPtr<class UInputAction> IA_UseSkill_;
+	UPROPERTY(EditDefaultsOnly, Category = Input)
+		TObjectPtr<class UInputAction> IA_CancelSkill_;
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = Animation)

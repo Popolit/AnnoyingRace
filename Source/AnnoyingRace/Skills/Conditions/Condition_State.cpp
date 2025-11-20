@@ -1,7 +1,6 @@
-#include "Condition_IdleState.h"
-#include "Components/StateComponent.h"
+#include "Condition_State.h"
 
-bool UCondition_IdleState::CheckCondition(UObject* _Target) const
+bool UCondition_State::CheckCondition(UObject* _Target) const
 {
 	AActor* Actor = Cast<AActor>(_Target);
 
@@ -11,7 +10,7 @@ bool UCondition_IdleState::CheckCondition(UObject* _Target) const
 
 		if(StateComponent)
 		{
-			return StateComponent->CheckCurrentState(EState::Idle);
+			return StateComponent->CheckCurrentState(StateToCheck_);
 		}
 	}
 	return false;

@@ -44,8 +44,17 @@ void UState_Idle::SkillButtonPushed(const FInputActionInstance& _Instance, AChar
 	}
 }
 
+void UState_Idle::CancelSkillButtonPushed(const FInputActionInstance& _Instance, ACharacter* _Character)
+{
+	APlayableCharacter* PlayableCharacter = Cast<APlayableCharacter>(_Character);
+	if(PlayableCharacter)
+	{
+		PlayableCharacter->CancelSkillButtonPushed();
+	}
+}
+
 void UState_Idle::TakeDamage(ACharacter* _Character, float _DamageAmount, FDamageEvent const& _DamageEvent, AController* _EventInstigator,
-	AActor* _DamageCauser)
+                             AActor* _DamageCauser)
 {
 	APlayableCharacter* PC = Cast<APlayableCharacter>(_Character);
 

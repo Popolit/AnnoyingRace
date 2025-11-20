@@ -7,7 +7,7 @@
 /**
  * Skill Trigger
  */
-UCLASS(Abstract, HideDropDown)
+UCLASS(Abstract, HideDropDown, EditInlineNew)
 class ANNOYINGRACE_API UTrigger : public UObject
 {
 	GENERATED_BODY()

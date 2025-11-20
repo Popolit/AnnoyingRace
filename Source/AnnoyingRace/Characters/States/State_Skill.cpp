@@ -23,8 +23,12 @@ void UState_Skill::SkillButtonPushed(const FInputActionInstance& _Instance, ACha
 {
 }
 
+void UState_Skill::CancelSkillButtonPushed(const struct FInputActionInstance& _Instance, ACharacter* _Character)
+{
+}
+
 void UState_Skill::TakeDamage(ACharacter* _Character, float _DamageAmount, FDamageEvent const& _DamageEvent, AController* _EventInstigator,
-	AActor* _DamageCauser)
+                              AActor* _DamageCauser)
 {
 	APlayableCharacter* PC = Cast<APlayableCharacter>(_Character);
 
